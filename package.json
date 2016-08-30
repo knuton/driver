@@ -1,0 +1,26 @@
+{
+  "name": "senso",
+  "version": "1.0.0",
+  "description": "Senso drivers and test suite",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "nodemon src",
+    "test": "nodemon src/test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@github.com/dividat/senso.git"
+  },
+  "author": "",
+  "license": "UNLICENSED",
+  "bugs": {
+    "url": "https://github.com/dividat/senso/issues"
+  },
+  "homepage": "https://github.com/dividat/senso#readme",
+  "dependencies": {
+    "express": "^4.14.0",
+    "nodemon": "^1.10.2",
+    "sylvester": "0.0.21",
+    "ws": "^1.1.1"
+  }
+}
