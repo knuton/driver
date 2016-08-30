@@ -38,10 +38,10 @@ app.get('/', function(req, res, next) {
 /************************************************
 * Senso
 ************************************************/
-var senso = require('./senso');
+var Senso = require('./Senso');
 var sensoLed = require('./senso/led');
 var sensoMotor = require('./senso/motor');
-senso.handleConnection = function(ws) {
+Senso.handleConnection = function(ws) {
     console.log("WS: Connected.");
     function send(data) {
         ws.send(JSON.stringify(data), function(err) {
@@ -51,7 +51,7 @@ senso.handleConnection = function(ws) {
         });
     }
 
-    senso.on('data', send);
+    Senso.on('data', send);
 
     ws.on('message', function(data, flags) {
         data = JSON.parse(data);
@@ -59,13 +59,13 @@ senso.handleConnection = function(ws) {
             case "Led":
                 var s = data.setting;
                 var ledBlock = sensoLed.block(s.channel, s.symbol, s.mode, s.color, s.brightness, s.power);
-                senso.control(ledBlock);
+                Senso.control(ledBlock);
                 break;
 
             case "Motor":
                 var s = data.setting;
                 var motorBlock = sensoMotor.block(s.channel, s.mode, s.impulses, s.impulse_duration);
-                senso.control(motorBlock);
+                Senso.control(motorBlock);
                 break;
 
             default:

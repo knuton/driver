@@ -40,7 +40,7 @@ const X = $M([
     [0, 0, 60]
 ]);
 
-function estimate(x_hat = $V([0, 0, 0]), P = sylvester.Matrix.Diagonal([0, 0, 0]), s) {
+function kalman(x_hat = $V([0, 0, 0]), P = sylvester.Matrix.Diagonal([0, 0, 0]), s) {
 
     // Predict
     var x_hat_minus = x_hat.dup();
@@ -74,26 +74,8 @@ function estimate(x_hat = $V([0, 0, 0]), P = sylvester.Matrix.Diagonal([0, 0, 0]
     var x = x_hat_minus.add(K.multiply(y));
     P = sylvester.Matrix.I(3).subtract(K.multiply(H)).multiply(P_minus);
 
-    return {x: x, P: P, sensors: s}
+    return {x: x, P: P}
 
 }
 
-function estimatePlate(prev, observation) {
-    return estimate(prev.x, prev.P, observation.sensors);
-}
-
-module.exports = function(prev, observations) {
-
-    var data = {};
-    data['time'] = observations['time'];
-    data['center'] = estimatePlate(prev['center'], observations['center']);
-    data['up'] = estimatePlate(prev['up'], observations['up']);
-    data['right'] = estimatePlate(prev['right'], observations['right']);
-    // NOTE: This is where you disable the down plate
-    data['down'] = prev['down'];
-    // data['down'] = estimatePlate(prev['down'], observations['down']);
-    data['left'] = estimatePlate(prev['left'], observations['left']);
-
-    return data;
-
-}
+module.exports = kalman;

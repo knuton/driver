@@ -3,6 +3,8 @@ const EventEmitter = require('events');
 
 const S = require('sylvester');
 
+var Plates = require('./senso/Plates.js');
+
 // Decoder for raw sensor data
 var decode = require('./senso/decode');
 var kalman = require('./senso/kalman');
@@ -19,32 +21,41 @@ function factory() {
     // Control connection
     var control = new net.Socket();
 
-    // store previous data for kalman...and initalize with null!
-    var initPlate = {
-        x: $V([0, 0, 0]),
-        P: S.Matrix.Diagonal([0, 0, 0]),
-        sensors: $V([0, 0, 0, 0])
+    // Initialize raw sensor values to 0
+    senso.sensors = new Plates($V([0, 0, 0, 0]));
+    senso.P = new Plates(S.Matrix.Diagonal([0, 0, 0]));
+    senso.x = new Plates($V([0, 0, 0]));
+
+    function serialize(sensors, x, P) {
+        return {
+            sensors: sensors.elements,
+            cop: [
+                x.elements[0], x.elements[1]
+            ],
+            force: [x.elements[2]],
+            P: P.diagonal().elements
+        }
     }
-    senso.data = {
-        time: 0,
-        center: initPlate,
-        up: initPlate,
-        right: initPlate,
-        down: initPlate,
-        left: initPlate
-    };
 
     function handleConnection(socket) {
         console.log("DATA: Connected");
         socket.on('data', function(raw) {
 
-            var data = kalman(senso.data, decode(raw));
-            senso.data = data;
+            // decode sensor values
+            senso.sensors = decode(raw);
+
+            // console.log(decode(raw));
+            // Kalman filter
+            var filtered = new Plates(kalman).bind(senso.x).bind(senso.P).bind(senso.sensors).call();
+            senso.x = filtered.fmap(k => k['x']);
+            senso.P = filtered.fmap(k => k['P']);
 
             // Acknowledge the data
             socket.write("Acknowledge");
 
-            // console.log(data);
+            // Serialize and emit
+            var data = new Plates(serialize).bind(senso.sensors).bind(senso.x).bind(senso.P).call();
+            console.log(data);
             senso.emit('data', data);
 
         });
