@@ -81,7 +81,7 @@ Senso.handleConnection = function(ws) {
     // handle disconnect
     ws.on('close', function close() {
         console.log("WS: Disconnected.")
-        senso.removeListener('data', send);
+        Senso.removeListener('data', send);
     });
 
 }
@@ -94,7 +94,7 @@ wss.on('connection', function connection(ws) {
 
     switch (location.pathname) {
         case "/senso":
-            senso.handleConnection(ws);
+            Senso.handleConnection(ws);
             break;
     }
 

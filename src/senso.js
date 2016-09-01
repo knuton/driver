@@ -23,6 +23,7 @@ function factory() {
 
     // Initialize raw sensor values to 0
     senso.sensors = new Plates($V([0, 0, 0, 0]));
+    senso.history = new Plates([]);
     senso.P = new Plates(S.Matrix.Diagonal([0, 0, 0]));
     senso.x = new Plates($V([0, 0, 0]));
 
@@ -32,7 +33,7 @@ function factory() {
             cop: [
                 x.elements[0], x.elements[1]
             ],
-            force: [x.elements[2]],
+            force: x.elements[2],
             P: P.diagonal().elements
         }
     }
@@ -44,7 +45,6 @@ function factory() {
             // decode sensor values
             senso.sensors = decode(raw);
 
-            // console.log(decode(raw));
             // Kalman filter
             var filtered = new Plates(kalman).bind(senso.x).bind(senso.P).bind(senso.sensors).call();
             senso.x = filtered.fmap(k => k['x']);
@@ -55,7 +55,7 @@ function factory() {
 
             // Serialize and emit
             var data = new Plates(serialize).bind(senso.sensors).bind(senso.x).bind(senso.P).call();
-            console.log(data);
+            // console.log(data);
             senso.emit('data', data);
 
         });
