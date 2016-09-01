@@ -2,105 +2,86 @@ const BLOCK_TYPE = 0x80;
 
 const SENSOR_BLOCKS = 1;
 
-require('sylvester');
+var sylvester = require('sylvester');
 var Plates = require('./plates');
+
+// Permutations for sensor values in order to allign all plates
+var permutations = new Plates($M([
+    [
+        1, 0, 0, 0
+    ],
+    [
+        0, 1, 0, 0
+    ],
+    [
+        0, 0, 0, 1
+    ],
+    [0, 0, 1, 0]
+]), $M([
+    [
+        1, 0, 0, 0
+    ],
+    [
+        0, 1, 0, 0
+    ],
+    [
+        0, 0, 0, 1
+    ],
+    [0, 0, 1, 0]
+]), $M([
+    [
+        0, 0, 1, 0
+    ],
+    [
+        1, 0, 0, 0
+    ],
+    [
+        0, 1, 0, 0
+    ],
+    [0, 0, 0, 1]
+]), $M([
+    [
+        0, 0, 0, 1
+    ],
+    [
+        0, 0, 1, 0
+    ],
+    [
+        1, 0, 0, 0
+    ],
+    [0, 1, 0, 0]
+]), $M([
+    [
+        0, 1, 0, 0
+    ],
+    [
+        0, 0, 0, 1
+    ],
+    [
+        0, 0, 1, 0
+    ],
+    [1, 0, 0, 0]
+]))
 
 module.exports = function decode(buffer) {
 
-    function decodePlate(buffer, offset = 0, permutation = $M([
-        [
-            1, 0, 0, 0
-        ],
-        [
-            0, 1, 0, 0
-        ],
-        [
-            0, 0, 1, 0
-        ],
-        [0, 0, 0, 1]
-    ])) {
-
-        var rawArray = [
-            buffer.readUInt16LE(offset),
-            buffer.readUInt16LE(offset + 2),
-            buffer.readUInt16LE(offset + 4),
-            buffer.readUInt16LE(offset + 6)
-        ].map(normalize);
-
-        function normalize(e) {
-            return e - 20000;
-        }
-
-        return permutation.multiply($V(rawArray));
-
+    function decodePlate(buffer) {
+        return $V([buffer.readUInt16LE(0), buffer.readUInt16LE(2), buffer.readUInt16LE(4), buffer.readUInt16LE(6)]);
     }
 
-    function decodeSensorBlock(buffer, offset = 0) {
-        return new Plates(decodePlate(buffer, offset + 4, $M([
-            [
-                1, 0, 0, 0
-            ],
-            [
-                0, 1, 0, 0
-            ],
-            [
-                0, 0, 0, 1
-            ],
-            [0, 0, 1, 0]
-        ])), decodePlate(buffer, offset + 12, $M([
-            [
-                1, 0, 0, 0
-            ],
-            [
-                0, 1, 0, 0
-            ],
-            [
-                0, 0, 0, 1
-            ],
-            [0, 0, 1, 0]
-        ])), decodePlate(buffer, offset + 20, $M([
-            [
-                0, 0, 1, 0
-            ],
-            [
-                1, 0, 0, 0
-            ],
-            [
-                0, 1, 0, 0
-            ],
-            [0, 0, 0, 1]
-        ])), decodePlate(buffer, offset + 28, $M([
-            [
-                0, 0, 0, 1
-            ],
-            [
-                0, 0, 1, 0
-            ],
-            [
-                1, 0, 0, 0
-            ],
-            [0, 1, 0, 0]
-        ])), decodePlate(buffer, offset + 36, $M([
-            [
-                0, 1, 0, 0
-            ],
-            [
-                0, 0, 0, 1
-            ],
-            [
-                0, 0, 1, 0
-            ],
-            [1, 0, 0, 0]
-        ])));
-    }
+    // Get just the data block
+    var dataBlock = buffer.slice(16, 60);
 
-    var block = [];
-    var offset = 16; // Ignore header
+    // Split up the data block into plates
+    var sensorBlocks = new Plates(dataBlock.slice(4, 12), dataBlock.slice(12, 20), dataBlock.slice(20, 28), dataBlock.slice(28, 36), dataBlock.slice(36, 44));
 
-    for (var i = 0; i < SENSOR_BLOCKS; i++) {
-        block.push(decodeSensorBlock(buffer, offset));
-        offset = offset + 44;
-    }
+    // Decode values and store as vectors
+    var decoded = new Plates(decodePlate).bind(sensorBlocks).call();
 
-    return block[0];
+    // Permutes values
+    // TODO: this should be done using nicer, but I can't figure out how call() works...
+    var permuted = new Plates(permutations.center.multiply(decoded.center), permutations.up.multiply(decoded.up), permutations.right.multiply(decoded.right), permutations.down.multiply(decoded.down), permutations.left.multiply(decoded.left));
+
+    return permuted;
+
 }

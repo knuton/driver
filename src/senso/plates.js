@@ -14,21 +14,11 @@ Plates.prototype.fmap = function(f) {
 }
 
 Plates.prototype.bind = function(a) {
-    this.center = this.center.bind(null, a.center);
-    this.up = this.up.bind(null, a.up);
-    this.right = this.right.bind(null, a.right);
-    this.down = this.down.bind(null, a.down);
-    this.left = this.left.bind(null, a.left);
-    return this;
+    return new Plates(this.center.bind(null, a.center), this.up.bind(null, a.up), this.right.bind(null, a.right), this.down.bind(null, a.down), this.left.bind(null, a.left));
 }
 
 Plates.prototype.call = function() {
-    this.center = this.center.call(null);
-    this.up = this.up.call(null);
-    this.right = this.right.call(null)
-    this.down = this.down.call(null)
-    this.left = this.left.call(null)
-    return this;
+    return new Plates(this.center.call(), this.up.call(), this.right.call(), this.down.call(), this.left.call());
 }
 
 module.exports = Plates;
