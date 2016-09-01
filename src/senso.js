@@ -3,7 +3,7 @@ const EventEmitter = require('events');
 
 const S = require('sylvester');
 
-var Plates = require('./senso/Plates.js');
+var Plates = require('./senso/plates');
 
 // Decoder for raw sensor data
 var decode = require('./senso/decode');
