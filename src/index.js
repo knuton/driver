@@ -38,7 +38,7 @@ app.get('/', function(req, res, next) {
 /************************************************
 * Senso
 ************************************************/
-var Senso = require('./Senso');
+var Senso = require('./senso');
 var sensoLed = require('./senso/led');
 var sensoMotor = require('./senso/motor');
 Senso.handleConnection = function(ws) {
