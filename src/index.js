@@ -68,6 +68,13 @@ Senso.handleConnection = function(ws) {
                 Senso.control(motorBlock);
                 break;
 
+            case "Callibrate":
+                console.log("CALLIBRATE");
+                console.log("  mu: ", data.mu);
+                console.log("  sigma: ", data.sigma);
+                Senso.callibrate(data.mu,data.sigma);
+                break;
+
             default:
                 console.log("CONTROL: Unkown control message type from Play: " + data.type);
                 break;

@@ -24,8 +24,14 @@ function factory() {
     // Initialize raw sensor values to 0
     senso.sensors = new Plates($V([0, 0, 0, 0]));
     senso.history = new Plates([]);
-    senso.P = new Plates(S.Matrix.Diagonal([0, 0, 0]));
+
+    // Kalman Parameters
+    senso.Q = new Plates(S.Matrix.Diagonal([0.001, 0.001, 50]));
+    senso.mu = new Plates($V([0, 0, 0, 0]));
+    senso.Sigma = new Plates(S.Matrix.Diagonal([100, 100, 100, 100]));
+
     senso.x = new Plates($V([0, 0, 0]));
+    senso.P = new Plates(S.Matrix.Diagonal([0, 0, 0]));
 
     function serialize(sensors, x, P) {
         return {
@@ -46,7 +52,7 @@ function factory() {
             senso.sensors = decode(raw);
 
             // Kalman filter
-            var filtered = new Plates(kalman).bind(senso.x).bind(senso.P).bind(senso.sensors).call();
+            var filtered = new Plates(kalman).bind(senso.Q).bind(senso.mu).bind(senso.Sigma).bind(senso.x).bind(senso.P).bind(senso.sensors).call();
             senso.x = filtered.fmap(k => k['x']);
             senso.P = filtered.fmap(k => k['P']);
 
@@ -105,6 +111,11 @@ function factory() {
         var p = pack(block);
         console.log("CONTROL: Sending ", p);
         control.write(p);
+    }
+
+    senso.callibrate = function(mu, simga) {
+        this.mu = new Plates($V(mu.center), $V(mu.up), $V(mu.right), $V(mu.down), $V(mu.left));
+        this.Sigma = new Plates(S.Matrix.Diagonal(mu.center), S.Matrix.Diagonal(mu.up), S.Matrix.Diagonal(mu.right), S.Matrix.Diagonal(mu.down), S.Matrix.Diagonal(mu.left));
     }
     return senso;
 
