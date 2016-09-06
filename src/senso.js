@@ -26,7 +26,7 @@ function factory() {
     senso.history = new Plates([]);
 
     // Kalman Parameters
-    senso.Q = new Plates(S.Matrix.Diagonal([0.0001, 0.0001, 2000]));
+    senso.Q = new Plates(S.Matrix.Diagonal([0.0001, 0.0001, 500]));
     senso.mu = new Plates($V([20000, 20000, 20000, 20000]));
     senso.Sigma = new Plates(S.Matrix.Diagonal([100, 100, 100, 100]));
 

@@ -21,15 +21,6 @@ const A = $M([
     [-1, 1]
 ]);
 
-const X = $M([
-    [
-        0.001, 0, 0
-    ],
-    [
-        0, 0.001, 0
-    ],
-    [0, 0, 60]
-]);
 
 function kalman(Q, mu, Sigma, x_hat, P, s) {
 
@@ -44,7 +35,7 @@ function kalman(Q, mu, Sigma, x_hat, P, s) {
 
     // the sum of all sensor values
     var f = $V([1, 1, 1, 1]).dot(s_prime);
-    // TODO: division by null check
+
     var fi;
     if (f != 0) {
         fi = 1 / f;
