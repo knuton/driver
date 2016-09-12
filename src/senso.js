@@ -10,10 +10,17 @@ var decode = require('./senso/decode');
 var kalman = require('./senso/kalman');
 
 // var SENSO_ADDRESS = '127.0.0.1';
-var SENSO_ADDRESS = '192.168.1.3';
+var SENSO_ADDRESS = '192.168.1.10';
 
 var CONTROL_PORT = 55567;
 var DATA_PORT = 55568;
+
+// Raw data logging
+const fs = require('fs');
+const LOG = false;
+if (LOG) {
+    var log = fs.createWriteStream("log.dat");
+}
 
 function factory() {
     var senso = new EventEmitter();
@@ -48,8 +55,23 @@ function factory() {
         console.log("DATA: Connected");
         socket.on('data', function(raw) {
 
+            // Log data
+            if (LOG) {
+                log.write(raw.toString('base64'));
+                log.write('\n');
+            }
+
             // decode sensor values
             senso.sensors = decode(raw);
+
+            // handle overflows as as negative values
+            // senso.sensors = senso.sensors.fmap(s => s.map(v => {if (v > 50000) {
+            // return v - 65536;
+            // } else {
+            // return v;
+            // }}));
+
+            // senso.sensors = senso.sensors.fmap(s => s.add($V([20000,20000,20000,20000])));
 
             // Kalman filter
             var filtered = new Plates(kalman).bind(senso.Q).bind(senso.mu).bind(senso.Sigma).bind(senso.x).bind(senso.P).bind(senso.sensors).call();
@@ -80,10 +102,10 @@ function factory() {
 
     control.on('close', function() {
         console.log("CONTROL: Connection closed.")
-        setTimeout(connectControl, 1000);
+        // setTimeout(connectControl, 1000);
     });
     control.on('error', function(err) {
-        console.log('CONTROL: Error: ', err);
+        console.log('CONTROL: Error: ', err.code);
     });
 
     connectControl();
@@ -105,6 +127,16 @@ function factory() {
         return Buffer.concat([
             protocol_header, block
         ], 8 + block.length)
+    }
+
+    senso.close = function(cb) {
+        dataServer.close();
+        if (LOG) {
+            log.end();
+            log.on('finish', cb);
+        } else {
+            cb();
+        }
     }
 
     senso.control = function(block) {
