@@ -1,5 +1,7 @@
 var sylvester = require('sylvester');
 
+const DEBUG = false;
+
 // state transition model
 const F = sylvester.Matrix.I(3); // identity
 
@@ -21,8 +23,15 @@ const A = $M([
     [-1, 1]
 ]);
 
-
 function kalman(Q, mu, Sigma, x_hat, P, s) {
+
+    if (DEBUG) {
+        console.log('=====================');
+        console.log("Q:", Q);
+        console.log("mu:", mu);
+        console.log("Sigma", Sigma);
+        console.log("s:", s);
+    }
 
     // Predict
     var x_hat_minus = x_hat.dup();
@@ -31,26 +40,41 @@ function kalman(Q, mu, Sigma, x_hat, P, s) {
     // shift s by callibration mean
     var s_prime = s.subtract(mu);
 
+    // console.log("mu", mu);
+    if (DEBUG)
+        console.log("s_prime", s_prime);
+
     // Compute observation z from sensor values
 
     // the sum of all sensor values
     var f = $V([1, 1, 1, 1]).dot(s_prime);
+    if (DEBUG)
+        console.log('f:', f);
 
     var fi;
     if (f != 0) {
         fi = 1 / f;
     } else {
-        fi = 10000;
+        fi = 0;
     }
 
     var A_prime = A.multiply(fi).augment($V([1, 1, 1, 1])).transpose();
 
+    if (DEBUG)
+        console.log('A\':', A_prime);
+
     var z = A_prime.multiply(s_prime);
+
+    if (DEBUG)
+        console.log('z:', z);
 
     // Observation noise covariance matrix
     var R = A_prime.multiply(Sigma).multiply(A_prime.transpose());
 
-    // measurement update
+    if (DEBUG)
+        console.log('R:', R)
+
+        // measurement update
     var y = z.subtract(x_hat_minus);
 
     var S = F.multiply(P_minus).multiply(F.transpose()).add(R);

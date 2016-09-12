@@ -33,9 +33,9 @@ function factory() {
     senso.history = new Plates([]);
 
     // Kalman Parameters
-    senso.Q = new Plates(S.Matrix.Diagonal([0.0001, 0.0001, 500]));
+    senso.Q = new Plates(S.Matrix.Diagonal([0.000001, 0.000001, 100]));
     senso.mu = new Plates($V([20000, 20000, 20000, 20000]));
-    senso.Sigma = new Plates(S.Matrix.Diagonal([100, 100, 100, 100]));
+    senso.Sigma = new Plates(S.Matrix.Diagonal([50, 50, 50, 50]));
 
     senso.x = new Plates($V([0, 0, 0]));
     senso.P = new Plates(S.Matrix.Diagonal([0, 0, 0]));
@@ -135,11 +135,11 @@ function factory() {
         control.write(p);
     }
 
-    senso.callibrate = function(mu, simga) {
-        this.x = new Plates($V([0, 0, 0]));
-        this.P = new Plates(S.Matrix.Diagonal([0, 0, 0]));
+    senso.callibrate = function(mu, sigma) {
+        // this.x = new Plates($V([0, 0, 0]));
+        // this.P = new Plates(S.Matrix.Diagonal([0, 0, 0]));
         this.mu = new Plates($V(mu.center), $V(mu.up), $V(mu.right), $V(mu.down), $V(mu.left));
-        this.Sigma = new Plates(S.Matrix.Diagonal(mu.center), S.Matrix.Diagonal(mu.up), S.Matrix.Diagonal(mu.right), S.Matrix.Diagonal(mu.down), S.Matrix.Diagonal(mu.left));
+        this.Sigma = new Plates(S.Matrix.Diagonal(sigma.center), S.Matrix.Diagonal(sigma.up), S.Matrix.Diagonal(sigma.right), S.Matrix.Diagonal(sigma.down), S.Matrix.Diagonal(sigma.left));
     }
     return senso;
 

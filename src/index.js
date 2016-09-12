@@ -69,9 +69,9 @@ Senso.handleConnection = function(ws) {
                 break;
 
             case "Callibrate":
-                console.log("CALLIBRATE");
-                console.log("  mu: ", data.mu);
-                console.log("  sigma: ", data.sigma);
+                // console.log("CALLIBRATE");
+                // console.log("  mu: ", data.mu);
+                // console.log("  sigma: ", data.sigma);
                 Senso.callibrate(data.mu,data.sigma);
                 break;
 
