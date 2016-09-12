@@ -1,48 +1,51 @@
 const fs = require('fs');
+const split = require('binary-split');
+const net = require('net');
 
-const split = require('binary-split')
+function replayLog(logFile, dataTimeout, connection) {
 
-function replayLog(logFile) {
+    var logStream = fs.createReadStream(logFile).pipe(split());
 
-    var net = require('net');
-    var connection = net.createConnection(55568, "127.0.0.1");
-
-    connection.on('connect', () => {
-        console.log("Connected to Data server.");
-
-        logStream = fs.createReadStream(logFile).pipe(split());
-
-        logStream.on('data', (data) => {
-            logStream.pause();
-            var buf = new Buffer(data.toString(), 'base64')
-            console.log(buf);
-            connection.write(buf);
-            setTimeout(() => {
-                logStream.resume();
-            }, 10);
-        }).on('end', () => {
-            console.log("Log ended. Closing connection.");
-            connection.end();
-        })
-
-    });
-
-    connection.on('close', () => {
+    logStream.on('data', (data) => {
+        logStream.pause();
+        var buf = new Buffer(data.toString(), 'base64')
+        console.log(buf);
+        connection.write(buf);
         setTimeout(() => {
-            replayLog(logFile);
-        }, 1000);
+            logStream.resume();
+        }, dataTimeout);
+    }).on('end', () => {
+        // reopen the log
+        replayLog(logFile, dataTimeout, connection);
     });
+}
 
-    connection.on('error', (err) => {
-        console.log('Error while connecting to data server: ', err.code);
-    })
+function connect(onConnect) {
+    var connection = net.createConnection(55568, "127.0.0.1");
+    connection.on('connect', () => {
+        onConnect(connection);
+    }).on('error', (err) => {
+        console.log("Could not connect to data server: ", err.code);
+        process.exit(1);
+    }).on('close', () => {
+        console.log("Connection closed. Exiting.")
+        process.exit(0);
+    });
 }
 
 // Emulate the control server with a echo server.
-var echo = require('./echo');
+const echo = require('./echo');
 
-var logFile = process.argv[2] || "logs/testing.dat";
-// start replaying log
+var argv = require('minimist')(process.argv.slice(2));
+
+var logFile = argv['_'].pop() || "logs/testing.dat";
+var dataTimeout = 't' in argv
+    ? argv['t']
+    : 10;
+
+// start replaying log after 1s
 setTimeout(() => {
-    replayLog(logFile);
+    connect((connection) => {
+        replayLog(logFile, dataTimeout, connection);
+    })
 }, 1000);

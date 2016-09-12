@@ -129,16 +129,6 @@ function factory() {
         ], 8 + block.length)
     }
 
-    senso.close = function(cb) {
-        dataServer.close();
-        if (LOG) {
-            log.end();
-            log.on('finish', cb);
-        } else {
-            cb();
-        }
-    }
-
     senso.control = function(block) {
         var p = pack(block);
         console.log("CONTROL: Sending ", p);

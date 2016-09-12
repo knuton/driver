@@ -10,9 +10,13 @@ Dividat Senso drivers and testing suite
 
 ## Replay logged data
 
-Example:
+Logged data can be replayed for debugging purposes.
 
-`npm run replay -- logs/bujar.dat`
+For default settings: `npm run replay`
+
+To replay an other recording: `npm run replay -- logs/bujar.dat`
+
+To slow down the replay: `npm run replay -- -t 100`
 
 ## Starting a local DHCP server
 
