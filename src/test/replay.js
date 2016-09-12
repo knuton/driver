@@ -4,32 +4,48 @@ const net = require('net');
 
 function replayLog(logFile, dataTimeout, connection) {
 
-    var logStream = fs.createReadStream(logFile).pipe(split());
+    var log = new fs.createReadStream(logFile)
+
+    var logStream = log.pipe(split());
+
+    connection.on('close', () => {
+        log.destroy();
+        logStream.removeAllListeners();
+    })
 
     logStream.on('data', (data) => {
         logStream.pause();
+
         var buf = new Buffer(data.toString(), 'base64')
         console.log(buf);
+
         connection.write(buf);
+
+        // wait for dataTimeout and then resume the stream
         setTimeout(() => {
             logStream.resume();
         }, dataTimeout);
+
     }).on('end', () => {
         // reopen the log
-        replayLog(logFile, dataTimeout, connection);
+        if (!connection.destroyed) {
+            replayLog(logFile, dataTimeout, connection);
+        }
     });
 }
 
 function connect(onConnect) {
-    var connection = net.createConnection(55568, "127.0.0.1");
+    var connection = new net.createConnection(55568, "127.0.0.1");
+    console.log("CONNECTION: Connecting");
     connection.on('connect', () => {
         onConnect(connection);
     }).on('error', (err) => {
-        console.log("Could not connect to data server: ", err.code);
-        process.exit(1);
+        console.log("CONNECTION: Error ", err.code);
     }).on('close', () => {
-        console.log("Connection closed. Exiting.")
-        process.exit(0);
+        console.log("CONNECTION: Closed")
+        setTimeout(() => {
+            connect(onConnect);
+        }, 2000);
     });
 }
 

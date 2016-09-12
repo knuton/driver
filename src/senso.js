@@ -25,9 +25,6 @@ if (LOG) {
 function factory() {
     var senso = new EventEmitter();
 
-    // Control connection
-    var control = new net.Socket();
-
     // Initialize raw sensor values to 0
     senso.sensors = new Plates($V([0, 0, 0, 0]));
     senso.history = new Plates([]);
@@ -94,19 +91,25 @@ function factory() {
 
     function connectControl() {
         console.log("CONTROL: Trying to reach " + SENSO_ADDRESS + ":" + CONTROL_PORT)
-        control.connect(CONTROL_PORT, SENSO_ADDRESS, function() {
+        var control = new net.createConnection(CONTROL_PORT, SENSO_ADDRESS, () => {
             console.log("CONTROL: Connected to ", SENSO_ADDRESS, ":", CONTROL_PORT);
-        })
+        });
+
+        control.on('close', function() {
+            console.log("CONTROL: Connection closed.")
+            setTimeout(connectControl, 2000);
+        });
+        control.on('error', function(err) {
+            console.log('CONTROL: Error: ', err.code);
+        });
+
+        senso.control = function(block) {
+            var p = pack(block);
+            console.log("CONTROL: Sending ", p);
+            control.write(p);
+        }
 
     }
-
-    control.on('close', function() {
-        console.log("CONTROL: Connection closed.")
-        // setTimeout(connectControl, 1000);
-    });
-    control.on('error', function(err) {
-        console.log('CONTROL: Error: ', err.code);
-    });
 
     connectControl();
 
@@ -127,12 +130,6 @@ function factory() {
         return Buffer.concat([
             protocol_header, block
         ], 8 + block.length)
-    }
-
-    senso.control = function(block) {
-        var p = pack(block);
-        console.log("CONTROL: Sending ", p);
-        control.write(p);
     }
 
     senso.callibrate = function(mu, sigma) {

@@ -4,8 +4,8 @@
   "description": "Senso drivers and test suite",
   "main": "src/index.js",
   "scripts": {
-    "start": "nodemon src",
-    "replay": "nodemon src/test/replay.js"
+    "start": "nodemon src/index.js",
+    "replay": "nodemon --watch src/test src/test/replay.js"
   },
   "repository": {
     "type": "git",
