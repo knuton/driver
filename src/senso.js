@@ -22,6 +22,77 @@ if (LOG) {
     var log = fs.createWriteStream("log.dat");
 }
 
+const A = new Plates(
+// Center
+$M([
+    // Position of Sensor A
+    [
+        1, 1
+    ],
+    // Position of Sensor B
+    [
+        2, 1
+    ],
+    // Position of Sensor C
+    [
+        2, 2
+    ],
+    // Position of Sensor D
+    [1, 2]
+]),
+// Up
+$M([
+    [
+        0, 0
+    ],
+    [
+        3, 0
+    ],
+    [
+        2, 1
+    ],
+    [1, 1]
+]),
+// Right
+$M([
+    [
+        2, 1
+    ],
+    [
+        3, 0
+    ],
+    [
+        3, 3
+    ],
+    [2, 2]
+]),
+// Down
+$M([
+    [
+        1, 2
+    ],
+    [
+        2, 2
+    ],
+    [
+        3, 3
+    ],
+    [0, 3]
+]),
+// Left
+$M([
+    [
+        0, 0
+    ],
+    [
+        1, 1
+    ],
+    [
+        1, 2
+    ],
+    [0, 3]
+]));
+
 function factory() {
     var senso = new EventEmitter();
 
@@ -30,11 +101,11 @@ function factory() {
     senso.history = new Plates([]);
 
     // Kalman Parameters
-    senso.Q = new Plates(S.Matrix.Diagonal([0.000001, 0.000001, 100]));
+    senso.Q = new Plates(S.Matrix.Diagonal([0.0000001, 0.0000001, 100]));
     senso.mu = new Plates($V([20000, 20000, 20000, 20000]));
-    senso.Sigma = new Plates(S.Matrix.Diagonal([50, 50, 50, 50]));
+    senso.Sigma = new Plates(S.Matrix.Diagonal([100, 100, 100, 100]));
 
-    senso.x = new Plates($V([0, 0, 0]));
+    senso.x = new Plates($V([1.5, 1.5, 0]), $V([1.5, 0.5, 0]), $V([2.5, 1.5, 0]), $V([1.5, 2.5, 0]), $V([0.5, 1.5, 0]));
     senso.P = new Plates(S.Matrix.Diagonal([0, 0, 0]));
 
     function serialize(sensors, x, P) {
@@ -62,16 +133,18 @@ function factory() {
             senso.sensors = decode(raw);
 
             // handle overflows as as negative values
-            // senso.sensors = senso.sensors.fmap(s => s.map(v => {if (v > 50000) {
-            // return v - 65536;
-            // } else {
-            // return v;
-            // }}));
+            senso.sensors = senso.sensors.fmap(s => s.map(v => {
+                if (v > 50000) {
+                    return v - 65536;
+                } else {
+                    return v;
+                }
+            }));
 
             // senso.sensors = senso.sensors.fmap(s => s.add($V([20000,20000,20000,20000])));
 
             // Kalman filter
-            var filtered = new Plates(kalman).bind(senso.Q).bind(senso.mu).bind(senso.Sigma).bind(senso.x).bind(senso.P).bind(senso.sensors).call();
+            var filtered = new Plates(kalman).bind(A).bind(senso.Q).bind(senso.mu).bind(senso.Sigma).bind(senso.x).bind(senso.P).bind(senso.sensors).call();
             senso.x = filtered.fmap(k => k['x']);
             senso.P = filtered.fmap(k => k['P']);
 
@@ -133,6 +206,9 @@ function factory() {
     }
 
     senso.callibrate = function(mu, sigma) {
+        console.log("CALLIBRATING");
+        console.log("mu", mu);
+        console.log("sigma", sigma);
         // this.x = new Plates($V([0, 0, 0]));
         // this.P = new Plates(S.Matrix.Diagonal([0, 0, 0]));
         this.mu = new Plates($V(mu.center), $V(mu.up), $V(mu.right), $V(mu.down), $V(mu.left));

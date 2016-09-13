@@ -5,25 +5,7 @@ const DEBUG = false;
 // state transition model
 const F = sylvester.Matrix.I(3); // identity
 
-// Matrix A defines Sensor positions
-const A = $M([
-    // Position of Sensor A
-    [
-        -1, -1
-    ],
-    // Position of Sensor B
-    [
-        1, -1
-    ],
-    // Position of Sensor C
-    [
-        1, 1
-    ],
-    // Position of Sensor D
-    [-1, 1]
-]);
-
-function kalman(Q, mu, Sigma, x_hat, P, s) {
+function kalman(A, Q, mu, Sigma, x_hat, P, s) {
 
     if (DEBUG) {
         console.log('=====================');
