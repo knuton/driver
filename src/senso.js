@@ -163,18 +163,27 @@ function factory() {
     }
 
     function connectControl() {
-        console.log("CONTROL: Trying to reach " + SENSO_ADDRESS + ":" + CONTROL_PORT)
+
+        // reattempt connection if connection can not be established within 5s
+        var timeout = setTimeout(connectControl, 5000);
+
         var control = new net.createConnection(CONTROL_PORT, SENSO_ADDRESS, () => {
             console.log("CONTROL: Connected to ", SENSO_ADDRESS, ":", CONTROL_PORT);
+            clearTimeout(timeout);
+            control.connected = true;
         });
 
         control.on('close', function() {
-            console.log("CONTROL: Connection closed.")
+            if (control.connected)
+                console.log("CONTROL: Connection closed.")
+            clearTimeout(timeout);
             setTimeout(connectControl, 2000);
         });
         control.on('error', function(err) {
-            console.log('CONTROL: Error: ', err.code);
-        });
+            if (control.connected)
+                console.log('CONTROL: Error: ', err.code);
+            }
+        );
 
         senso.control = function(block) {
             var p = pack(block);
@@ -184,6 +193,7 @@ function factory() {
 
     }
 
+    console.log("CONTROL: Trying to reach " + SENSO_ADDRESS + ":" + CONTROL_PORT)
     connectControl();
 
     // Create Data server
@@ -195,6 +205,14 @@ function factory() {
     dataServer.on('close', function(err) {
         console.log('DATA: Server closed. ', err);
     });
+
+
+    // Ready
+    console.log("");
+    console.log("###############################");
+    console.log("# READY: Connect Senso now!");
+    console.log("###############################");
+    console.log("");
 
     function pack(block) {
         var protocol_header = new Buffer(8);
