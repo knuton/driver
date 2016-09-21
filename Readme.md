@@ -6,7 +6,7 @@ Dividat Senso drivers and testing suite
 
 1. Install dependencies: `npm install`
 2. Start the drivers: `npm start`
-3. Navigate to <http://dev.dividat.ch/senso.html> for a debug interface.
+3. Navigate to <http://dev.dividat.ch/senso/senso.html> for a debug interface.
 
 ## Replay logged data
 
