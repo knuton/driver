@@ -1,4 +1,5 @@
 var sylvester = require('sylvester');
+var curry = require('curry');
 
 const DEBUG = false;
 
@@ -70,4 +71,4 @@ function kalman(A, Q, mu, Sigma, x_hat, P, s) {
 
 }
 
-module.exports = kalman;
+module.exports = curry(kalman);

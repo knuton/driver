@@ -18,7 +18,9 @@
   },
   "homepage": "https://github.com/dividat/senso#readme",
   "dependencies": {
+    "curry": "^1.2.0",
     "express": "^4.14.0",
+    "fantasy-land": "^1.0.1",
     "nodemon": "^1.10.2",
     "sylvester": "0.0.21",
     "ws": "^1.1.1"

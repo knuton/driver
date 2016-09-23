@@ -76,7 +76,8 @@ module.exports = function decode(buffer) {
     var sensorBlocks = new Plates(dataBlock.slice(4, 12), dataBlock.slice(12, 20), dataBlock.slice(20, 28), dataBlock.slice(28, 36), dataBlock.slice(36, 44));
 
     // Decode values and store as vectors
-    var decoded = new Plates(decodePlate).bind(sensorBlocks).call();
+    var decoded = sensorBlocks.ap(new Plates(decodePlate));
+    // var decoded = new Plates(decodePlate).ap(sensorBlocks);
 
     // Permutes values
     // TODO: this should be done using nicer, but I can't figure out how call() works...

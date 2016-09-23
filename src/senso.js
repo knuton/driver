@@ -2,6 +2,7 @@ var net = require('net');
 const EventEmitter = require('events');
 
 const S = require('sylvester');
+var curry = require('curry');
 
 var Plates = require('./senso/plates');
 
@@ -133,7 +134,7 @@ function factory() {
             senso.sensors = decode(raw);
 
             // handle overflows as as negative values
-            senso.sensors = senso.sensors.fmap(s => s.map(v => {
+            senso.sensors = senso.sensors.map(s => s.map(v => {
                 if (v > 50000) {
                     return v - 65536;
                 } else {
@@ -144,16 +145,15 @@ function factory() {
             // senso.sensors = senso.sensors.fmap(s => s.add($V([20000,20000,20000,20000])));
 
             // Kalman filter
-            var filtered = new Plates(kalman).bind(A).bind(senso.Q).bind(senso.mu).bind(senso.Sigma).bind(senso.x).bind(senso.P).bind(senso.sensors).call();
-            senso.x = filtered.fmap(k => k['x']);
-            senso.P = filtered.fmap(k => k['P']);
+            var filtered = new Plates(kalman).flipAp(A).flipAp(senso.Q).flipAp(senso.mu).flipAp(senso.Sigma).flipAp(senso.x).flipAp(senso.P).flipAp(senso.sensors);
+            senso.x = filtered.map(k => k['x']);
+            senso.P = filtered.map(k => k['P']);
 
             // Acknowledge the data
             socket.write("Acknowledge");
 
             // Serialize and emit
-            var data = new Plates(serialize).bind(senso.sensors).bind(senso.x).bind(senso.P).call();
-            // console.log(data);
+            var data = new Plates(curry(serialize)).flipAp(senso.sensors).flipAp(senso.x).flipAp(senso.P);
             senso.emit('data', data);
 
         });
