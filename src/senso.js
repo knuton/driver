@@ -9,9 +9,10 @@ var Plates = require('./senso/plates');
 // Decoder for raw sensor data
 var decode = require('./senso/decode');
 var kalman = require('./senso/kalman');
+var coordinates = require('./senso/coordinates');
 
-// var SENSO_ADDRESS = '127.0.0.1';
-var SENSO_ADDRESS = '192.168.1.10';
+var SENSO_ADDRESS = '127.0.0.1';
+// var SENSO_ADDRESS = '192.168.1.10';
 
 var CONTROL_PORT = 55567;
 var DATA_PORT = 55568;
@@ -22,77 +23,6 @@ const LOG = false;
 if (LOG) {
     var log = fs.createWriteStream("log.dat");
 }
-
-const A = new Plates(
-// Center
-$M([
-    // Position of Sensor A
-    [
-        1, 1
-    ],
-    // Position of Sensor B
-    [
-        2, 1
-    ],
-    // Position of Sensor C
-    [
-        2, 2
-    ],
-    // Position of Sensor D
-    [1, 2]
-]),
-// Up
-$M([
-    [
-        0, 0
-    ],
-    [
-        3, 0
-    ],
-    [
-        2, 1
-    ],
-    [1, 1]
-]),
-// Right
-$M([
-    [
-        2, 1
-    ],
-    [
-        3, 0
-    ],
-    [
-        3, 3
-    ],
-    [2, 2]
-]),
-// Down
-$M([
-    [
-        1, 2
-    ],
-    [
-        2, 2
-    ],
-    [
-        3, 3
-    ],
-    [0, 3]
-]),
-// Left
-$M([
-    [
-        0, 0
-    ],
-    [
-        1, 1
-    ],
-    [
-        1, 2
-    ],
-    [0, 3]
-]));
 
 function factory() {
     var senso = new EventEmitter();
@@ -145,7 +75,7 @@ function factory() {
             // senso.sensors = senso.sensors.fmap(s => s.add($V([20000,20000,20000,20000])));
 
             // Kalman filter
-            var filtered = new Plates(kalman).flipAp(A).flipAp(senso.Q).flipAp(senso.mu).flipAp(senso.Sigma).flipAp(senso.x).flipAp(senso.P).flipAp(senso.sensors);
+            var filtered = new Plates(kalman).flipAp(coordinates.sensorPosition).flipAp(senso.Q).flipAp(senso.mu).flipAp(senso.Sigma).flipAp(senso.x).flipAp(senso.P).flipAp(senso.sensors);
             senso.x = filtered.map(k => k['x']);
             senso.P = filtered.map(k => k['P']);
 
@@ -205,7 +135,6 @@ function factory() {
     dataServer.on('close', function(err) {
         console.log('DATA: Server closed. ', err);
     });
-
 
     // Ready
     console.log("");
