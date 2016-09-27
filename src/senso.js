@@ -11,8 +11,8 @@ var decode = require('./senso/decode');
 var kalman = require('./senso/kalman');
 var coordinates = require('./senso/coordinates');
 
-var SENSO_ADDRESS = '127.0.0.1';
-// var SENSO_ADDRESS = '192.168.1.10';
+// var SENSO_ADDRESS = '127.0.0.1';
+var SENSO_ADDRESS = '192.168.1.10';
 
 var CONTROL_PORT = 55567;
 var DATA_PORT = 55568;
