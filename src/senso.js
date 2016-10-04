@@ -33,7 +33,7 @@ function factory() {
 
     // Kalman Parameters
     senso.Q = new Plates(S.Matrix.Diagonal([0.0000001, 0.0000001, 100]));
-    senso.mu = new Plates($V([20000, 20000, 20000, 20000]));
+    senso.mu = new Plates($V([0, 0, 0, 0]));
     senso.Sigma = new Plates(S.Matrix.Diagonal([100, 100, 100, 100]));
 
     senso.x = new Plates($V([1.5, 1.5, 0]), $V([1.5, 0.5, 0]), $V([2.5, 1.5, 0]), $V([1.5, 2.5, 0]), $V([0.5, 1.5, 0]));
@@ -64,13 +64,13 @@ function factory() {
             senso.sensors = decode(raw);
 
             // handle overflows as as negative values
-            senso.sensors = senso.sensors.map(s => s.map(v => {
-                if (v > 50000) {
-                    return v - 65536;
-                } else {
-                    return v;
-                }
-            }));
+            // senso.sensors = senso.sensors.map(s => s.map(v => {
+            //     if (v > 50000) {
+            //         return v - 65536;
+            //     } else {
+            //         return v;
+            //     }
+            // }));
 
             // senso.sensors = senso.sensors.fmap(s => s.add($V([20000,20000,20000,20000])));
 
