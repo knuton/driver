@@ -19,7 +19,6 @@ module.exports = function decode(buffer) {
 
     // Decode values and store as vectors
     var decoded = sensorBlocks.ap(new Plates(decodePlate));
-    // var decoded = new Plates(decodePlate).ap(sensorBlocks);
 
     return decoded;
 
