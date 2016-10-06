@@ -20,13 +20,13 @@ var SENSO_ADDRESS = '192.168.1.10';
 var CONTROL_PORT = 55567;
 var DATA_PORT = 55568;
 
-// Raw data logging
+// Data logging
 const fs = require('fs');
 const LOG = false;
 if (LOG) {
-    var log = fs.createWriteStream("log.dat");
+    var rawLog = fs.createWriteStream("log_raw.dat");
+    var decodedLog = fs.createWriteStream("log_decoded.csv");
 }
-
 
 // Serialize raw sensor values, x and P
 function serialize(sensors, x, P) {
@@ -40,7 +40,6 @@ function serialize(sensors, x, P) {
     }
 }
 
-
 // Pack control Block
 function packControl(block) {
     var protocol_header = new Buffer(8);
@@ -51,11 +50,8 @@ function packControl(block) {
     ], 8 + block.length)
 }
 
-
-
 function factory() {
     var senso = new EventEmitter();
-
 
     /************************************************
      * Decoding and Kalman
@@ -88,14 +84,21 @@ function factory() {
         console.log("DATA: Connected");
         socket.on('data', function(raw) {
 
-            // Log data
-            if (LOG) {
-                log.write(raw.toString('base64'));
-                log.write('\n');
-            }
-
             // decode sensor values
             senso.sensors = decode(raw);
+
+            // Log data
+            if (LOG) {
+                rawLog.write(raw.toString('base64'));
+                rawLog.write('\n');
+
+                var decoded = senso.sensors.map((v) => {
+                    return v.elements
+                }).toArray();
+                var decodedCsv = [].concat.apply([], decoded).join(",");
+                decodedLog.write(decodedCsv);
+                decodedLog.write('\n');
+            }
 
             // Kalman filter
             var filtered = new Plates(kalman).flipAp(coordinates.sensorPosition).flipAp(senso.Q).flipAp(senso.mu).flipAp(senso.Sigma).flipAp(senso.x).flipAp(senso.P).flipAp(senso.sensors);
@@ -114,7 +117,6 @@ function factory() {
             console.log("DATA: Error: ", err);
         });
     }
-
 
     /************************************************
      * Create and handle control connection
@@ -135,7 +137,7 @@ function factory() {
     function controlConnectionError(err) {
         if (senso.control.connected)
             console.log('CONTROL: Error: ', err.code);
-    }
+        }
 
     function createControlConnection() {
         console.log("CONTROL: Trying to reach " + SENSO_ADDRESS + ":" + CONTROL_PORT)
@@ -153,8 +155,6 @@ function factory() {
         senso.control.write(p);
     }
 
-
-
     /************************************************
      * Handle WebSocket connection
      ************************************************/
@@ -170,7 +170,6 @@ function factory() {
         }
 
         senso.on('data', send);
-
 
         ws.on('message', function(data, flags) {
             data = JSON.parse(data);
@@ -201,13 +200,11 @@ function factory() {
             }
         });
 
-
         // handle disconnect
         ws.on('close', function close() {
             console.log("WS: Disconnected.")
             senso.removeListener('data', send);
         });
-
 
     };
 
@@ -223,8 +220,6 @@ function factory() {
         console.log('DATA: Server closed. ', err);
     });
 
-
-
     /************************************************
      * Ready!
      ************************************************/
@@ -233,7 +228,6 @@ function factory() {
     console.log("# READY: Connect Senso now!");
     console.log("###############################");
     console.log("");
-
 
     return senso;
 
