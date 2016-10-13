@@ -60,7 +60,7 @@ function factory() {
     senso.sensors = new Plates($V([0, 0, 0, 0]));
 
     // Kalman Parameters
-    senso.Q = new Plates(S.Matrix.Diagonal([0.0000001, 0.0000001, 100]));
+    senso.Q = new Plates(S.Matrix.Diagonal([0.0000001, 0.0000001, 0.0005]));
     senso.mu = new Plates($V([0, 0, 0, 0]));
     senso.Sigma = new Plates(S.Matrix.Diagonal([100, 100, 100, 100]));
 
