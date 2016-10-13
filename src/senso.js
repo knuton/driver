@@ -35,8 +35,7 @@ function serialize(sensors, x, P) {
         cop: [
             x.elements[0], x.elements[1]
         ],
-        force: x.elements[2],
-        P: P.diagonal().elements
+        force: x.elements[2]
     }
 }
 
