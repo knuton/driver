@@ -32,10 +32,9 @@ if (LOG) {
 function serialize(sensors, x, P) {
     return {
         sensors: sensors.elements,
-        cop: [
-            x.elements[0], x.elements[1]
-        ],
-        force: x.elements[2]
+        x: x.elements[0],
+        y: x.elements[1],
+        f: x.elements[2]
     }
 }
 
