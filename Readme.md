@@ -8,6 +8,15 @@ Dividat Senso drivers and testing suite
 2. Start the drivers: `npm start`
 3. Navigate to <http://dev.dividat.ch/senso/senso.html> for a debug interface.
 
+## Logging data
+
+Data from Senso can be logged. To log data set the variable `LOG` in `src/senso.js` to `true`.
+
+Two log files are created:
+
+- `log_raw.dat`: A base64 encoding of the raw packets received from the hardware.
+- `log_decoded.csv`: A comma-seperated-value file of the decoded sensor values.
+
 ## Replay logged data
 
 Logged data can be replayed for debugging purposes.

@@ -64,13 +64,10 @@ Plates.prototype.of = function(b) {
     return new Plates(b);
 }
 Plates.prototype[fl.of] = Plates.prototype.of;
-//
-// Plates.prototype.bind = function(a) {
-//     return new Plates(this.center.bind(null, a.center), this.up.bind(null, a.up), this.right.bind(null, a.right), this.down.bind(null, a.down), this.left.bind(null, a.left));
-// }
-//
-// Plates.prototype.call = function() {
-//     return new Plates(this.center.call(), this.up.call(), this.right.call(), this.down.call(), this.left.call());
-// }
+
+// toArray
+Plates.prototype.toArray = function() {
+    return [this.center, this.up, this.right, this.down, this.left];
+}
 
 module.exports = Plates;
