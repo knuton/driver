@@ -1,8 +1,8 @@
-// Model Senso plates as Applicative Functor
+// Model Senso plates as an Applicative Functor
 
 const fl = require('fantasy-land');
 
-function Plates(center, up, right, down, left) {
+function DirectionContainer(center, up, right, down, left) {
     this.center = center;
     this.up = up || center;
     this.right = right || center;
@@ -12,8 +12,8 @@ function Plates(center, up, right, down, left) {
 }
 
 // Functor
-Plates.prototype.map = function(f) {
-    return new Plates(
+DirectionContainer.prototype.map = function(f) {
+    return new DirectionContainer(
     // center
     f(this.center),
     // up
@@ -25,11 +25,11 @@ Plates.prototype.map = function(f) {
     // left
     f(this.left))
 }
-Plates.prototype[fl.map] = Plates.prototype.map;
+DirectionContainer.prototype[fl.map] = DirectionContainer.prototype.map;
 
 // Apply
-Plates.prototype.ap = function(b) {
-    return new Plates(
+DirectionContainer.prototype.ap = function(b) {
+    return new DirectionContainer(
     // center
     b.center(this.center),
     // up
@@ -41,12 +41,12 @@ Plates.prototype.ap = function(b) {
     // left
     b.left(this.left))
 }
-Plates.prototype[fl.ap] = Plates.prototype.ap;
+DirectionContainer.prototype[fl.ap] = DirectionContainer.prototype.ap;
 
 // flipped AP where function is in Apply and value is argument
 // flipAp :: Apply f => f (a -> b) -> f a -> f b
-Plates.prototype.flipAp = function(b) {
-    return new Plates(
+DirectionContainer.prototype.flipAp = function(b) {
+    return new DirectionContainer(
     // center
     this.center(b.center),
     // up
@@ -60,14 +60,14 @@ Plates.prototype.flipAp = function(b) {
 }
 
 // Applicative
-Plates.prototype.of = function(b) {
-    return new Plates(b);
+DirectionContainer.prototype.of = function(b) {
+    return new DirectionContainer(b);
 }
-Plates.prototype[fl.of] = Plates.prototype.of;
+DirectionContainer.prototype[fl.of] = DirectionContainer.prototype.of;
 
 // toArray
-Plates.prototype.toArray = function() {
+DirectionContainer.prototype.toArray = function() {
     return [this.center, this.up, this.right, this.down, this.left];
 }
 
-module.exports = Plates;
+module.exports = DirectionContainer;
