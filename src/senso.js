@@ -1,11 +1,14 @@
+const EventEmitter = require('events');
+
+const Connection = require('./persistentConnection');
+
 const led = require('./senso/led');
 const motor = require('./senso/motor');
 
 const data = require('./senso/data');
-const control = require('./senso/control');
 
-var SENSO_ADDRESS = '127.0.0.1';
-// var SENSO_ADDRESS = '192.168.1.10';
+const DEFAULT_DATA_PORT = 55568;
+const DEFAULT_CONTROL_PORT = 55567;
 
 // // Data logging
 // const fs = require('fs');
@@ -15,64 +18,82 @@ var SENSO_ADDRESS = '127.0.0.1';
 //     var decodedLog = fs.createWriteStream("log_decoded.csv");
 // }
 
-function factory(ws) {
+// Pack control Block
+function packControl(block) {
+    var protocol_header = new Buffer(8);
+    protocol_header.fill(0);
 
-    console.log("WS: Connected.");
+    return Buffer.concat([
+        protocol_header, block
+    ], 8 + block.length)
+}
 
-    function send(data) {
-        ws.send(JSON.stringify(data), function(err) {
-            if (err) {
-                console.log("WS: Error sending data, " + err);
+function factory(sensoAddress) {
+
+    var dataState = data.init()
+    var dataEmitter = new EventEmitter();
+    var dataConnection = Connection(sensoAddress, DEFAULT_DATA_PORT, (raw) => {
+        var dataReturn = data.update(raw, dataState);
+        dataState = dataReturn.state;
+        dataEmitter.emit('data', dataReturn.toSend);
+    }, "DATA");
+
+    var controlConnection = Connection(sensoAddress, DEFAULT_CONTROL_PORT, (data) => {}, "CONTROL");
+
+    function sendControl(block) {
+        var socket = controlConnection.getSocket();
+        if (socket) {
+            socket.write(packControl(block));
+        }
+    }
+
+    function onWS(ws) {
+
+        console.log("WS: Connected.");
+
+        function send(data) {
+            ws.send(JSON.stringify(data), function(err) {
+                if (err) {
+                    console.log("WS: Error sending data, " + err);
+                }
+            });
+        }
+
+        dataEmitter.on('data', send);
+
+        // handle disconnect
+        ws.on('close', function close() {
+            console.log("WS: Disconnected.")
+            dataEmitter.removeListener('data', send);
+        });
+
+        // Handle incomming messages
+        ws.on('message', function(data, flags) {
+            var msg = JSON.parse(data);
+            // console.log(msg);
+            switch (msg.type) {
+                case "Led":
+                    var s = msg.setting;
+                    var ledBlock = led(s.channel, s.symbol, s.mode, s.color, s.brightness, s.power);
+                    sendControl(ledBlock);
+                    break;
+
+                case "Motor":
+                    var s = msg.setting;
+                    var motorBlock = motor(s.channel, s.mode, s.impulses, s.impulse_duration);
+                    sendControl(motorBlock);
+                    break;
+
+                default:
+                    console.log("CONTROL: Unkown control message type from Play: " + msg.type);
+                    break;
+
             }
         });
+
     }
 
-    var reconnect = () => {
-        if (ws.readyState <= 1) {
-            return true;
-        } else {
-            return false;
-        }
-    }
-
-    var dataConnection = data(SENSO_ADDRESS, send, reconnect);
-    var controlConnection = control(SENSO_ADDRESS, reconnect);
-
-    ws.on('message', function(data, flags) {
-        data = JSON.parse(data);
-        console.log(data);
-        switch (data.type) {
-            case "Led":
-                var s = data.setting;
-                var ledBlock = led(s.channel, s.symbol, s.mode, s.color, s.brightness, s.power);
-                if (controlConnection.send) {
-                    controlConnection.send(ledBlock);
-                }
-                break;
-
-            case "Motor":
-                var s = data.setting;
-                var motorBlock = motor(s.channel, s.mode, s.impulses, s.impulse_duration);
-                if (controlConnection.send) {
-                    controlConnection.send(motorBlock);
-                }
-                break;
-
-            default:
-                console.log("CONTROL: Unkown control message type from Play: " + data.type);
-                break;
-
-        }
-    });
-
-    // handle disconnect
-    ws.on('close', function close() {
-        console.log("WS: Disconnected.")
-        dataConnection.end();
-        delete dataConnection;
-        controlConnection.end();
-        delete controlConnection;
-    });
+    return {onWS: onWS};
 
 }
 

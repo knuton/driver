@@ -7,7 +7,8 @@ var app = express();
 var url = require('url');
 
 // Hardware
-var senso = require('./senso');
+var SENSO_ADDRESS = '192.168.1.100';
+var senso = require('./senso')(SENSO_ADDRESS);
 
 // Start the server
 var http = require('http');
@@ -38,7 +39,7 @@ wss.on('connection', function connection(ws) {
             /************************************************
              * Senso
              ************************************************/
-            senso(ws);
+            senso.onWS(ws);
             break;
     }
 
