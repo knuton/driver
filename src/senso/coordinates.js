@@ -2,10 +2,10 @@
 
 const S = require('sylvester');
 
-const Plates = require('./plates');
+const DirectionContainer = require('./DirectionContainer');
 
 module.exports = {
-    origin: new Plates(
+    origin: new DirectionContainer(
     // centegr
     $V([1.5, 1.5]),
     // up
@@ -17,7 +17,7 @@ module.exports = {
     // left
     $V([0.5, 1.5])),
 
-    sensorPosition: new Plates(
+    sensorPosition: new DirectionContainer(
     // center
     $M([
         // A

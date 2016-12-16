@@ -6,9 +6,9 @@ var express = require('express');
 var app = express();
 var url = require('url');
 
-
 // Hardware
-var senso = require('./senso');
+var SENSO_ADDRESS = '192.168.1.10';
+var senso = require('./senso')(SENSO_ADDRESS);
 
 // Start the server
 var http = require('http');
@@ -19,10 +19,7 @@ server.listen(8380, function() {
 
 // WebSocket server
 var WebSocketServer = require('ws').Server;
-var wss = new WebSocketServer({
-    server: server
-});
-
+var wss = new WebSocketServer({server: server});
 
 /************************************************
  * Index Route
@@ -30,7 +27,6 @@ var wss = new WebSocketServer({
 app.get('/', function(req, res, next) {
     res.send('Senso');
 });
-
 
 /************************************************
  * Handle WebSocket connections
@@ -43,20 +39,16 @@ wss.on('connection', function connection(ws) {
             /************************************************
              * Senso
              ************************************************/
-            senso.handleWebSocket(ws);
+            senso.onWS(ws);
             break;
     }
 
 });
 
-
 // Handle windows ctrl-c...
 if (process.platform === "win32") {
 
-    var rl = require("readline").createInterface({
-        input: process.stdin,
-        output: process.stdout
-    });
+    var rl = require("readline").createInterface({input: process.stdin, output: process.stdout});
 
     rl.on("SIGINT", function() {
         process.emit("SIGINT");

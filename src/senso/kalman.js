@@ -1,5 +1,5 @@
-var sylvester = require('sylvester');
-var curry = require('curry');
+const sylvester = require('sylvester');
+const ramda = require('ramda');
 
 const DEBUG = false;
 
@@ -71,4 +71,4 @@ function kalman(A, Q, mu, Sigma, x_hat, P, s) {
 
 }
 
-module.exports = curry(kalman);
+module.exports = ramda.curry(kalman);
