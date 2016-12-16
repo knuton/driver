@@ -7,7 +7,7 @@ var app = express();
 var url = require('url');
 
 // Hardware
-var SENSO_ADDRESS = '192.168.1.100';
+var SENSO_ADDRESS = '192.168.1.10';
 var senso = require('./senso')(SENSO_ADDRESS);
 
 // Start the server
