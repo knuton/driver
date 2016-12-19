@@ -5,7 +5,7 @@
   "main": "src/index.js",
   "scripts": {
     "start": "nodemon src/index.js",
-    "replay": "nodemon --watch src/test src/test/replay.js"
+    "replay": "nodemon --watch src-test/ src-test/replay.js"
   },
   "repository": {
     "type": "git",
@@ -20,12 +20,12 @@
   "dependencies": {
     "express": "^4.14.0",
     "fantasy-land": "^1.0.1",
-    "nodemon": "^1.10.2",
     "sylvester": "0.0.21",
     "ws": "^1.1.1"
   },
   "devDependencies": {
     "binary-split": "^1.0.3",
-    "minimist": "^1.2.0"
+    "minimist": "^1.2.0",
+    "nodemon": "^1.10.2"
   }
 }
