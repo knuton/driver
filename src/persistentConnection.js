@@ -1,66 +1,87 @@
 const net = require('net');
 
-module.exports = (host, port, onData, name) => {
+function Connection(host, port, onData) {
+    this.host = host;
+    this.port = port;
+    this.onData = onData;
 
-    var name = name || "UNNAMED Connection";
+    this.connected = false;
+    this.destroyed = false;
 
-    var log = ((msg) => {
-        console.log(name + ": " + msg)
-    });
+    this.lastErrorMessage = "";
 
-    var connection = {};
-
-    var connected = false;
-    var destroyed = false;
-
-    var socket;
-    createConnection();
-
-    function createConnection() {
-        log("Attempting connection to " + host + ":" + port)
-        socket = new net.createConnection(port, host, onConnect).setKeepAlive(true, 1000).setNoDelay(true);
-
-        connected = false;
-
-        socket.setTimeout(10000);
-        socket.on('timeout', onTimeout);
-        socket.on('close', onClose);
-        socket.on('error', onError);
-        socket.on('data', onData);
-    }
-
-    function onTimeout() {
-        if (socket.connecting) {
-            createConnection();
-        } else {
-            log("Timeout. Sending heart beat.");
-            var heartBeat = (new Buffer(2)).fill(0);
-            socket.write(heartBeat);
-        }
-    }
-
-    function onConnect() {
-        log("connected!");
-
-        connected = true;
-    }
-
-    function onClose() {
-        log("Connection closed.");
-
-        connected = false;
-
-        setTimeout(createConnection, 2000);
-    }
-
-    function onError(err) {
-        log('Error: ', err.code);
-    }
-
-    connection.getSocket = () => {
-        return socket;
-    }
-
-    return connection;
+    this.connect();
 
 }
+
+Connection.prototype.connect = function() {
+    var self = this;
+    if (!self.destroyed) {
+        self.connected = false;
+        self.log("Creating new connection.")
+        self.socket = new net.createConnection(self.port, self.host, self.onConnect).setKeepAlive(true, 1000).setNoDelay(true).setTimeout(10000).on('timeout', self.onTimeout.bind(self)).on('close', self.onClose.bind(self)).on('error', self.onError.bind(self)).on('data', self.onData);
+    }
+}
+
+// Basic API
+Connection.prototype.getSocket = function() {
+    return this.socket;
+}
+
+Connection.prototype.destroy = function() {
+    this.log("Detroying connection.");
+    this.destroyed = true;
+    if (this.socket) {
+        this.socket.destroy();
+    }
+}
+
+// Socket event handlers
+Connection.prototype.onTimeout = function() {
+    var self = this;
+    self.lastErrorMessage = "Timeout"
+
+    if (self.socket) {
+        if (self.socket.connecting) {
+            self.log("Timeout while connecting.");
+            self.socket.destroy();
+        } else {
+            self.log("Timeout. Sending heart beat.");
+            var heartBeat = (new Buffer(2)).fill(0);
+            self.socket.write(heartBeat);
+        }
+    }
+}
+
+Connection.prototype.onConnect = function() {
+    this.log("Connected!");
+    this.connected = true;
+}
+
+Connection.prototype.onClose = function() {
+    var self = this;
+    self.log("Connection closed.");
+    setTimeout(self.connect.bind(self), 5000);
+}
+
+Connection.prototype.onError = function(err) {
+    this.lastErrorMessage = err.message;
+    this.log('Error: ', err.message);
+}
+
+// Logging
+Connection.prototype.setLogger = function(logger) {
+    this.logger = logger;
+}
+
+Connection.prototype.log = function(msg) {
+    var formatted = this.host + ":" + this.port + " - " + msg;
+
+    if (this.logger) {
+        this.logger(formatted)
+    } else {
+        console.log(formatted);
+    }
+}
+
+module.exports = Connection;

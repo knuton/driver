@@ -40,7 +40,7 @@ function connect(onConnect) {
     connection.on('connect', () => {
         onConnect(connection);
     }).on('error', (err) => {
-        console.log("CONNECTION: Error ", err.code);
+        console.log("CONNECTION: Error ", err.message);
     }).on('close', () => {
         console.log("CONNECTION: Closed")
         setTimeout(() => {

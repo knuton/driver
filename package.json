@@ -1,10 +1,11 @@
 {
-  "name": "senso",
+  "name": "dividat-driver",
+  "productName": "Dividat Driver",
   "version": "1.0.0",
   "description": "Senso drivers and test suite",
-  "main": "src/index.js",
+  "main": "src/main.js",
   "scripts": {
-    "start": "nodemon src/index.js",
+    "start": "nodemon src/server.js",
     "replay": "nodemon --watch src-test/ src-test/replay.js"
   },
   "repository": {
@@ -18,13 +19,17 @@
   },
   "homepage": "https://github.com/dividat/senso#readme",
   "dependencies": {
+    "cors": "^2.8.1",
+    "electron-config": "^0.2.1",
     "express": "^4.14.0",
     "fantasy-land": "^1.0.1",
+    "ramda": "^0.22.1",
     "sylvester": "0.0.21",
     "ws": "^1.1.1"
   },
   "devDependencies": {
     "binary-split": "^1.0.3",
+    "electron": "^1.4.12",
     "minimist": "^1.2.0",
     "nodemon": "^1.10.2"
   }
