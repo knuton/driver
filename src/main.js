@@ -29,12 +29,12 @@ app.on('ready', () => {
                 shell.openExternal('https://play.dividat.com/');
             }
         }, {
-            type: 'separator'
-        }, {
             label: "Log",
             click: () => {
                 shell.openItem(logPath);
             }
+        }, {
+            type: 'separator'
         }, {
             label: 'Exit',
             click: () => {
