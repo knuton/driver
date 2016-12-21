@@ -8,6 +8,7 @@ const Config = require('electron-config');
 const config = new Config();
 
 const log = require('electron-log');
+log.transports.file.level = 'info';
 
 let appIcon;
 
