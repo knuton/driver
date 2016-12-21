@@ -47,7 +47,7 @@ function Replayer(recFile, timeout) {
                 stream.resume();
             }, timeout)
         }).on('end', () => {
-            createServer();
+            createStream();
         })
     }
 
