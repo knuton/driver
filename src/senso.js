@@ -11,8 +11,25 @@ const data = require('./senso/data');
 
 const DATA_PORT = 55568;
 const CONTROL_PORT = 55567;
+const DEFAULT_SENSO_ADDRESS = '192.168.1.10';
 
 const log = require('electron-log');
+
+let config;
+try {
+    const Config = require('electron-config');
+    config = new Config();
+} catch (err) {
+    log.warn("Could not load config file.");
+    config = {
+        get: function(key) {
+            return;
+        },
+        set: function(key, value) {
+            return;
+        }
+    }
+}
 
 // // Data logging
 // const fs = require('fs');
@@ -32,7 +49,7 @@ function packControl(block) {
     ], 8 + block.length)
 }
 
-function factory(config) {
+function factory(sensoAddress, recorder) {
 
     var dataState = data.init()
     var dataEmitter = new EventEmitter();
@@ -40,7 +57,7 @@ function factory(config) {
     let dataConnection;
     let controlConnection;
 
-    var sensoAddress = config.get('senso.address');
+    var sensoAddress = sensoAddress || config.get('senso.address') || DEFAULT_SENSO_ADDRESS;
 
     connect(sensoAddress);
 
@@ -54,6 +71,13 @@ function factory(config) {
         }
 
         dataConnection = new Connection(sensoAddress, DATA_PORT, (raw) => {
+
+            // Record data
+            if (recorder) {
+                rawLog.write(raw.toString('base64'));
+                rawLog.write('\n');
+            }
+
             var dataReturn = data.update(raw, dataState);
             dataState = dataReturn.state;
             dataEmitter.emit('data', dataReturn.toSend);

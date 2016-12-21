@@ -20,7 +20,7 @@ Connection.prototype.connect = function() {
     if (!self.destroyed) {
         self.connected = false;
         self.log("Creating new connection.")
-        self.socket = new net.createConnection(self.port, self.host, self.onConnect).setKeepAlive(true, 1000).setNoDelay(true).setTimeout(10000).on('timeout', self.onTimeout.bind(self)).on('close', self.onClose.bind(self)).on('error', self.onError.bind(self)).on('data', self.onData);
+        self.socket = new net.createConnection(self.port, self.host, self.onConnect.bind(self)).setKeepAlive(true, 1000).setNoDelay(true).setTimeout(10000).on('timeout', self.onTimeout.bind(self)).on('close', self.onClose.bind(self)).on('error', self.onError.bind(self)).on('data', self.onData);
     }
 }
 
@@ -55,8 +55,9 @@ Connection.prototype.onTimeout = function() {
 }
 
 Connection.prototype.onConnect = function() {
-    this.log("Connected!");
-    this.connected = true;
+    var self = this;
+    self.connected = true;
+    self.log("Connected!");
 }
 
 Connection.prototype.onClose = function() {

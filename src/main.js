@@ -16,7 +16,7 @@ app.on('ready', () => {
     log.info("Dividat Driver starting.");
 
     // load server
-    const server = require('./server')(config);
+    const server = require('./server')();
 
     const logPath = log.findLogPath('Dividat Driver');
 

@@ -2,66 +2,57 @@ const fs = require('fs');
 const split = require('binary-split');
 const net = require('net');
 
-function replayLog(logFile, dataTimeout, connection) {
+const EventEmitter = require('events');
 
-    var log = new fs.createReadStream(logFile)
+var HOST = '127.0.0.1';
+var PORT = 55568;
 
-    var logStream = log.pipe(split());
+module.exports = function(recFile, timeout) {
 
-    connection.on('close', () => {
-        log.destroy();
-        logStream.removeAllListeners();
-    })
+    var replayer = Replayer(recFile, timeout);
 
-    logStream.on('data', (data) => {
-        logStream.pause();
+    var server = net.createServer(function(socket) {
+        // We have a connection - a socket object is assigned to the connection automatically
+        console.log('DATA - Connection: ' + socket.remoteAddress + ':' + socket.remotePort);
 
-        var buf = new Buffer(data.toString(), 'base64')
-        console.log(buf);
-
-        connection.write(buf);
-
-        // wait for dataTimeout and then resume the stream
-        setTimeout(() => {
-            logStream.resume();
-        }, dataTimeout);
-
-    }).on('end', () => {
-        // reopen the log
-        if (!connection.destroyed) {
-            replayLog(logFile, dataTimeout, connection);
+        function send(data) {
+            socket.write(data);
         }
-    });
+
+        replayer.on('data', send);
+
+        socket.on('close', () => {
+            replayer.removeListener('data', send);
+            console.log('DATA - Closed: ' + socket.remoteAddress + ' ' + socket.remotePort);
+        });
+
+    }).listen(PORT, HOST);
+    console.log('DATA listening on ' + HOST + ':' + PORT);
+
 }
 
-function connect(onConnect) {
-    var connection = new net.createConnection(55568, "127.0.0.1");
-    console.log("CONNECTION: Connecting");
-    connection.on('connect', () => {
-        onConnect(connection);
-    }).on('error', (err) => {
-        console.log("CONNECTION: Error ", err.message);
-    }).on('close', () => {
-        console.log("CONNECTION: Closed")
-        setTimeout(() => {
-            connect(onConnect);
-        }, 2000);
-    });
+function Replayer(recFile, timeout) {
+    var emitter = new EventEmitter();
+
+    function createStream() {
+        var stream = new fs.createReadStream(recFile).pipe(split());
+
+        stream.on('data', (data) => {
+            stream.pause();
+
+            var buf = new Buffer(data.toString(), 'base64')
+            emitter.emit('data', buf);
+
+            setTimeout(() => {
+                stream.resume();
+            }, timeout)
+        }).on('end', () => {
+            createServer();
+        })
+    }
+
+    createStream();
+
+    return emitter;
+
 }
-
-// Emulate the control server with a echo server.
-const echo = require('./echo');
-
-var argv = require('minimist')(process.argv.slice(2));
-
-var logFile = argv['_'].pop() || "logs/testing.dat";
-var dataTimeout = 't' in argv
-    ? argv['t']
-    : 10;
-
-// start replaying log after 1s
-setTimeout(() => {
-    connect((connection) => {
-        replayLog(logFile, dataTimeout, connection);
-    })
-}, 1000);

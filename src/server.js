@@ -13,31 +13,10 @@ const pjson = require('../package.json');
 const log = require('electron-log');
 
 // Hardware
-const DEFAULT_SENSO_ADDRESS = '192.168.1.10';
 
+function factory(sensoAddress, recorder) {
 
-function factory(config) {
-
-    if (config) {
-        if (!config.get("senso.address")) {
-            config.set("senso.address", DEFAULT_SENSO_ADDRESS);
-        }
-    } else {
-        config = {
-            get: function(key) {
-                switch (key) {
-                    case "senso.address":
-                        return DEFAULT_SENSO_ADDRESS;
-                        break;
-                }
-            },
-            set: function(key, value) {
-                return;
-            }
-        }
-    }
-
-    var senso = require('./senso')(config);
+    var senso = require('./senso')(sensoAddress, recorder);
 
     // Start the server
     var http = require('http');
@@ -88,7 +67,18 @@ module.exports = factory;
 
 if (require.main === module) {
     var argv = require('minimist')(process.argv.slice(2));
-    console.log(argv);
 
-    factory();
+    let recorder;
+    if ('rec' in argv) {
+        log.info("Recording data to: " + argv['rec']);
+        const fs = require('fs');
+        recorder = fs.createWriteStream(argv['rec']);
+    }
+
+    let sensoAddress;
+    if ('address' in argv) {
+        sensoAddress = argv['address'];
+    }
+
+    factory(sensoAddress, recorder);
 }

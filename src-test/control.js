@@ -1,4 +1,4 @@
-// Simple echo server to Senso control commands
+// Moch up the Senso control server.
 
 var net = require('net');
 
@@ -11,23 +11,23 @@ var PORT = 55567;
 module.exports = net.createServer(function(sock) {
 
     // We have a connection - a socket object is assigned to the connection automatically
-    console.log('ECHO - Connection: ' + sock.remoteAddress + ':' + sock.remotePort);
+    console.log('CONTROL - Connection: ' + sock.remoteAddress + ':' + sock.remotePort);
 
     // Add a 'data' event handler to this instance of socket
     sock.on('data', function(data) {
 
         // console.log('DATA ' + sock.remoteAddress + ': ' + data);
-        console.log(data);
+        console.log('CONTROL', data);
         // Write the data back to the socket, the client will receive it as data from the server
-        sock.write(data);
+        // sock.write(data);
 
     });
 
     // Add a 'close' event handler to this instance of socket
     sock.on('close', function(data) {
-        console.log('CLOSED: ' + sock.remoteAddress + ' ' + sock.remotePort);
+        console.log('CONTROL - Closed: ' + sock.remoteAddress + ' ' + sock.remotePort);
     });
 
 }).listen(PORT, HOST);
 
-console.log('ECHO listening on ' + HOST + ':' + PORT);
+console.log('CONTROL listening on ' + HOST + ':' + PORT);
