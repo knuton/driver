@@ -12,6 +12,8 @@ const data = require('./senso/data');
 const DATA_PORT = 55568;
 const CONTROL_PORT = 55567;
 
+const log = require('electron-log');
+
 // // Data logging
 // const fs = require('fs');
 // const LOG = false;
@@ -44,7 +46,7 @@ function factory(config) {
 
     function connect() {
 
-        console.log("SENSO: Connecting to " + sensoAddress);
+        log.info("SENSO: Connecting to " + sensoAddress);
 
         // Destroy any previous connections
         if (dataConnection) {
@@ -81,12 +83,12 @@ function factory(config) {
     return {
         onWS: function(ws) {
 
-            console.log("WS: Connected.");
+            log.info("WS: Connected.");
 
             function send(data) {
                 ws.send(JSON.stringify(data), function(err) {
                     if (err) {
-                        console.log("WS: Error sending data, " + err);
+                        log.warn("WS: Error sending data, " + err);
                     }
                 });
             }
@@ -95,14 +97,13 @@ function factory(config) {
 
             // handle disconnect
             ws.on('close', function close() {
-                console.log("WS: Disconnected.")
+                log.info("WS: Disconnected.")
                 dataEmitter.removeListener('data', send);
             });
 
             // Handle incomming messages
             ws.on('message', function(data, flags) {
                 var msg = JSON.parse(data);
-                // console.log(msg);
                 switch (msg.type) {
                     case "Led":
                         var s = msg.setting;
@@ -123,7 +124,7 @@ function factory(config) {
                         break;
 
                     default:
-                        console.log("CONTROL: Unkown control message type from Play: " + msg.type);
+                        log.warn("CONTROL: Unkown control message type from Play: " + msg.type);
                         break;
 
                 }

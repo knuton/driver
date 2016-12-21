@@ -1,12 +1,30 @@
-# senso
+# Dividat Driver
 
-Dividat Senso drivers and testing suite
+Drivers and testing suite for Senso Hardware.
 
 ## Getting started
 
 1. Install dependencies: `npm install`
-2. Start the drivers: `npm start`
-3. Navigate to <http://dev.dividat.ch/senso/senso.html> for a debug interface.
+2. Start the drivers in development mode: `npm start`
+3. Driver can now be reached at <https://localhost:8380>. Use `diviapps` for a nice interface.
+
+## Electron
+
+To start with Electron (as in production) run `npm run electron`.
+
+This will start the driver as an Electron application. Note that no window will be created. The application lives in the menubar.
+
+To build Electron releases: `npm run build`
+
+## Log files
+
+A log file is written to:
+
+- on Linux: `~/.config/<app name>/log.log`
+- on OS X: `~/Library/Logs/<app name>/log.log`
+- on Windows: `%USERPROFILE%/AppData/Roaming/<app name>/log.log`
+
+  See <https://www.npmjs.com/package/electron-log>.
 
 ## Logging data
 

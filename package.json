@@ -6,6 +6,8 @@
   "main": "src/main.js",
   "scripts": {
     "start": "nodemon src/server.js",
+    "electron": "electron .",
+    "build": "rimraf build; mkdir -p build; electron-packager . --platform darwin,win32 --arch x64 --out build",
     "replay": "nodemon --watch src-test/ src-test/replay.js"
   },
   "repository": {
@@ -21,6 +23,7 @@
   "dependencies": {
     "cors": "^2.8.1",
     "electron-config": "^0.2.1",
+    "electron-log": "^1.2.2",
     "express": "^4.14.0",
     "fantasy-land": "^1.0.1",
     "ramda": "^0.22.1",
@@ -30,7 +33,9 @@
   "devDependencies": {
     "binary-split": "^1.0.3",
     "electron": "^1.4.12",
+    "electron-packager": "^8.4.0",
     "minimist": "^1.2.0",
-    "nodemon": "^1.10.2"
+    "nodemon": "^1.10.2",
+    "rimraf": "^2.5.4"
   }
 }

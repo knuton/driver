@@ -10,8 +10,11 @@ const cors = require('cors');
 //
 const pjson = require('../package.json');
 
+const log = require('electron-log');
+
 // Hardware
 const DEFAULT_SENSO_ADDRESS = '192.168.1.10';
+
 
 function factory(config) {
 
@@ -40,7 +43,7 @@ function factory(config) {
     var http = require('http');
     var server = http.createServer(app);
     server.listen(8380, function() {
-        console.log('SERVER: Listening on ' + server.address().port)
+        log.info('SERVER: Listening on ' + server.address().port)
     });
 
     // WebSocket server
@@ -84,5 +87,8 @@ function factory(config) {
 module.exports = factory;
 
 if (require.main === module) {
+    var argv = require('minimist')(process.argv.slice(2));
+    console.log(argv);
+
     factory();
 }

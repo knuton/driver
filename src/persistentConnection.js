@@ -1,4 +1,5 @@
 const net = require('net');
+const log = require('electron-log');
 
 function Connection(host, port, onData) {
     this.host = host;
@@ -69,19 +70,9 @@ Connection.prototype.onError = function(err) {
     this.log('Error: ', err.message);
 }
 
-// Logging
-Connection.prototype.setLogger = function(logger) {
-    this.logger = logger;
-}
-
 Connection.prototype.log = function(msg) {
     var formatted = this.host + ":" + this.port + " - " + msg;
-
-    if (this.logger) {
-        this.logger(formatted)
-    } else {
-        console.log(formatted);
-    }
+    log.info(formatted);
 }
 
 module.exports = Connection;
