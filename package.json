@@ -1,7 +1,7 @@
 {
   "name": "dividat-driver",
   "productName": "Dividat Driver",
-  "version": "1.0.0",
+  "version": "0.1.0",
   "description": "Senso drivers and test suite",
   "main": "src/main.js",
   "scripts": {
