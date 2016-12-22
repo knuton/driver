@@ -1,5 +1,7 @@
 const EventEmitter = require('events');
 
+const router = require('express').Router();
+
 const Connection = require('./persistentConnection');
 
 const led = require('./senso/led');
@@ -7,8 +9,27 @@ const motor = require('./senso/motor');
 
 const data = require('./senso/data');
 
-const DEFAULT_DATA_PORT = 55568;
-const DEFAULT_CONTROL_PORT = 55567;
+const DATA_PORT = 55568;
+const CONTROL_PORT = 55567;
+const DEFAULT_SENSO_ADDRESS = '192.168.1.10';
+
+const log = require('electron-log');
+
+let config;
+try {
+    const Config = require('electron-config');
+    config = new Config();
+} catch (err) {
+    log.warn("Could not load config file.");
+    config = {
+        get: function(key) {
+            return;
+        },
+        set: function(key, value) {
+            return;
+        }
+    }
+}
 
 // // Data logging
 // const fs = require('fs');
@@ -28,17 +49,53 @@ function packControl(block) {
     ], 8 + block.length)
 }
 
-function factory(sensoAddress) {
+function factory(sensoAddress, recorder) {
 
     var dataState = data.init()
     var dataEmitter = new EventEmitter();
-    var dataConnection = Connection(sensoAddress, DEFAULT_DATA_PORT, (raw) => {
-        var dataReturn = data.update(raw, dataState);
-        dataState = dataReturn.state;
-        dataEmitter.emit('data', dataReturn.toSend);
-    }, "DATA");
 
-    var controlConnection = Connection(sensoAddress, DEFAULT_CONTROL_PORT, (data) => {}, "CONTROL");
+    let dataConnection;
+    let controlConnection;
+
+    var sensoAddress = sensoAddress || config.get('senso.address') || DEFAULT_SENSO_ADDRESS;
+
+    connect(sensoAddress);
+
+    function connect() {
+
+        log.info("SENSO: Connecting to " + sensoAddress);
+
+        // Destroy any previous connections
+        if (dataConnection) {
+            dataConnection.destroy();
+        }
+
+        dataConnection = new Connection(sensoAddress, DATA_PORT, (raw) => {
+
+            // Record data
+            if (recorder) {
+                recorder.write(raw.toString('base64'));
+                recorder.write('\n');
+            }
+
+            var dataReturn = data.update(raw, dataState);
+            dataState = dataReturn.state;
+            dataEmitter.emit('data', dataReturn.toSend);
+        }, "DATA");
+
+        if (controlConnection) {
+            controlConnection.destroy();
+        }
+        controlConnection = new Connection(sensoAddress, CONTROL_PORT, (data) => {}, "CONTROL");
+    }
+
+    function connected() {
+        return (controlConnection.connected && dataConnection.connected);
+    }
+
+    function errorMessage() {
+        return "Control: " + controlConnection.lastErrorMessage + "; Data: " + dataConnection.lastErrorMessage;
+    }
 
     function sendControl(block) {
         var socket = controlConnection.getSocket();
@@ -47,53 +104,62 @@ function factory(sensoAddress) {
         }
     }
 
-    function onWS(ws) {
+    return {
+        onWS: function(ws) {
 
-        console.log("WS: Connected.");
+            log.info("WS: Connected.");
 
-        function send(data) {
-            ws.send(JSON.stringify(data), function(err) {
-                if (err) {
-                    console.log("WS: Error sending data, " + err);
+            function send(data) {
+                ws.send(JSON.stringify(data), function(err) {
+                    if (err) {
+                        log.warn("WS: Error sending data, " + err);
+                    }
+                });
+            }
+
+            dataEmitter.on('data', send);
+
+            // handle disconnect
+            ws.on('close', function close() {
+                log.info("WS: Disconnected.")
+                dataEmitter.removeListener('data', send);
+            });
+
+            // Handle incomming messages
+            ws.on('message', function(data, flags) {
+                var msg = JSON.parse(data);
+                switch (msg.type) {
+                    case "Led":
+                        var s = msg.setting;
+                        var ledBlock = led(s.channel, s.symbol, s.mode, s.color, s.brightness, s.power);
+                        sendControl(ledBlock);
+                        break;
+
+                    case "Motor":
+                        var s = msg.setting;
+                        var motorBlock = motor(s.channel, s.mode, s.impulses, s.impulse_duration);
+                        sendControl(motorBlock);
+                        break;
+
+                    case "Connect":
+                        sensoAddress = msg.address;
+                        config.set("senso.address", sensoAddress);
+                        connect();
+                        break;
+
+                    default:
+                        log.warn("CONTROL: Unkown control message type from Play: " + msg.type);
+                        break;
+
                 }
             });
-        }
 
-        dataEmitter.on('data', send);
+        },
 
-        // handle disconnect
-        ws.on('close', function close() {
-            console.log("WS: Disconnected.")
-            dataEmitter.removeListener('data', send);
-        });
-
-        // Handle incomming messages
-        ws.on('message', function(data, flags) {
-            var msg = JSON.parse(data);
-            // console.log(msg);
-            switch (msg.type) {
-                case "Led":
-                    var s = msg.setting;
-                    var ledBlock = led(s.channel, s.symbol, s.mode, s.color, s.brightness, s.power);
-                    sendControl(ledBlock);
-                    break;
-
-                case "Motor":
-                    var s = msg.setting;
-                    var motorBlock = motor(s.channel, s.mode, s.impulses, s.impulse_duration);
-                    sendControl(motorBlock);
-                    break;
-
-                default:
-                    console.log("CONTROL: Unkown control message type from Play: " + msg.type);
-                    break;
-
-            }
-        });
-
-    }
-
-    return {onWS: onWS};
+        router: router.get('/', function(req, res) {
+            res.json({address: sensoAddress, connected: connected(), error: errorMessage()});
+        })
+    };
 
 }
 
