@@ -74,8 +74,8 @@ function factory(sensoAddress, recorder) {
 
             // Record data
             if (recorder) {
-                rawLog.write(raw.toString('base64'));
-                rawLog.write('\n');
+                recorder.write(raw.toString('base64'));
+                recorder.write('\n');
             }
 
             var dataReturn = data.update(raw, dataState);
