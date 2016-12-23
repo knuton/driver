@@ -14,7 +14,12 @@ const log = require('electron-log');
 
 const fs = require('fs');
 
-const ressourcesPath = process.resourcesPath + "/app" || '.';
+let resourcesPath;
+if (process.resourcesPath) {
+    resourcesPath = process.resourcesPath + "/app";
+} else {
+    resourcesPath = '.';
+}
 
 // Hardware
 
@@ -25,8 +30,8 @@ function factory(sensoAddress, recorder) {
     // Start the server
     var https = require('https');
     var server = https.createServer({
-        key: fs.readFileSync(ressourcesPath + "/ssl/key.pem"),
-        cert: fs.readFileSync(ressourcesPath + "/ssl/cert.pem")
+        key: fs.readFileSync(resourcesPath + "/ssl/key.pem"),
+        cert: fs.readFileSync(resourcesPath + "/ssl/cert.pem")
     }, app);
     server.listen(8380, function() {
         log.info('SERVER: Listening on ' + server.address().port)
