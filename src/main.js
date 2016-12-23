@@ -10,11 +10,14 @@ const config = new Config();
 const log = require('electron-log');
 log.transports.file.level = 'info';
 
+const pjson = require('../package.json');
+
 let appIcon;
 
 app.on('ready', () => {
 
     log.info("Dividat Driver starting.");
+    log.info("Version: " + pjson.version);
 
     // load server
     const server = require('./server')();
@@ -30,6 +33,16 @@ app.on('ready', () => {
                 shell.openExternal('https://play.dividat.com/');
             }
         }, {
+            label: 'Play (dev)',
+            click: () => {
+                shell.openExternal('https://dev.dividat.com/play.html');
+            }
+        }, {
+            type: 'separator'
+        }, {
+            label: 'Version: ' + pjson.version,
+            enabled: false
+        }, {
             label: "Log",
             click: () => {
                 shell.openItem(logPath);
@@ -38,9 +51,7 @@ app.on('ready', () => {
             type: 'separator'
         }, {
             label: 'Exit',
-            click: () => {
-                process.exit(0);
-            }
+            role: 'quit'
         }
     ]);
     appIcon.setToolTip('Dividat Driver');
