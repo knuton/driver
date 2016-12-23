@@ -15,7 +15,7 @@ Drivers and testing suite for Senso Hardware.
 
 1. Install dependencies: `npm install`
 2. Start the drivers in development mode: `npm start`. The default Senso address is `192.168.1.10`. The address can be changed via a WebSocket command (via `diviapps` UI) or with command line argument: `npm start -- --address ADDRESS`.
-3. Driver can now be reached at <https://localhost:8380>. Use `diviapps` for a nice interface.
+3. Driver can now be reached at <https://localhost.dividat.com:8380>. Use `diviapps` for a nice interface.
 
 ## Electron
 
@@ -25,13 +25,25 @@ This will start the driver as an Electron application. Note that no window will 
 
 To build Electron releases: `npm run build`
 
+# SSL
+
+The server encrypts traffic using a signed certificate for the host `localhost.dividat.com` (`localhost.dividat.com` resolves to `127.0.0.1`).
+
+The driver needs to be accessed via hostname `localhost.dividat.com`. If not your browser will complain.
+
+For machines not connected to the internet use the following `/etc/hosts` entry:
+
+```
+127.0.0.1 localhost.dividat.com
+```
+
 ## Log files
 
 A log file is written to:
 
-- on Linux: `~/.config/<app name>/log.log`
-- on OS X: `~/Library/Logs/<app name>/log.log`
-- on Windows: `%USERPROFILE%/AppData/Roaming/<app name>/log.log`
+- on Linux: `~/.config/Dividat Driver/log.log`
+- on OS X: `~/Library/Logs/Dividat Driver/log.log`
+- on Windows: `%USERPROFILE%/AppData/Roaming/Dividat Driver/log.log`
 
 See <https://www.npmjs.com/package/electron-log>.
 

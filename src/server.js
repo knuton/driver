@@ -12,6 +12,8 @@ const pjson = require('../package.json');
 
 const log = require('electron-log');
 
+const fs = require('fs');
+
 // Hardware
 
 function factory(sensoAddress, recorder) {
@@ -19,8 +21,11 @@ function factory(sensoAddress, recorder) {
     var senso = require('./senso')(sensoAddress, recorder);
 
     // Start the server
-    var http = require('http');
-    var server = http.createServer(app);
+    var https = require('https');
+    var server = https.createServer({
+        key: fs.readFileSync("./ssl/key.pem"),
+        cert: fs.readFileSync("./ssl/cert.pem")
+    }, app);
     server.listen(8380, function() {
         log.info('SERVER: Listening on ' + server.address().port)
     });
