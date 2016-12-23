@@ -14,6 +14,8 @@ const log = require('electron-log');
 
 const fs = require('fs');
 
+const ressourcesPath = process.resourcesPath + "/app" || '.';
+
 // Hardware
 
 function factory(sensoAddress, recorder) {
@@ -23,8 +25,8 @@ function factory(sensoAddress, recorder) {
     // Start the server
     var https = require('https');
     var server = https.createServer({
-        key: fs.readFileSync("./ssl/key.pem"),
-        cert: fs.readFileSync("./ssl/cert.pem")
+        key: fs.readFileSync(ressourcesPath + "/ssl/key.pem"),
+        cert: fs.readFileSync(ressourcesPath + "/ssl/cert.pem")
     }, app);
     server.listen(8380, function() {
         log.info('SERVER: Listening on ' + server.address().port)
@@ -42,7 +44,7 @@ function factory(sensoAddress, recorder) {
  * Index Route
  ************************************************/
     app.get('/', function(req, res) {
-        res.json({message: "Welcome to the dividata API!", version: pjson.version});
+        res.json({message: "Dividat Driver", version: pjson.version});
     });
 
     app.use('/senso', senso.router);
