@@ -1,13 +1,13 @@
 {
   "name": "dividat-driver",
   "productName": "Dividat Driver",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Senso drivers and test suite",
   "main": "src/main.js",
   "scripts": {
     "start": "nodemon src/server.js",
     "electron": "electron .",
-    "build": "rimraf build; mkdir -p build; electron-packager . --platform darwin,win32 --arch x64,ia32 --out build",
+    "build": "rimraf build; mkdir -p build; electron-packager . --platform darwin,win32 --icon src/icons/dividat-icon --arch x64,ia32 --out build",
     "replay": "nodemon --watch src-test/ src-test/"
   },
   "repository": {
