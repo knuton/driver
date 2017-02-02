@@ -25,17 +25,12 @@ app.on('ready', () => {
     const logPath = log.findLogPath('Dividat Driver');
 
     // Create tray
-    appIcon = new Tray(__dirname + '/images/tray-icon.png');
+    appIcon = new Tray(__dirname + '/icons/16x16.png');
     const contextMenu = Menu.buildFromTemplate([
         {
             label: 'Play',
             click: () => {
                 shell.openExternal('https://play.dividat.com/');
-            }
-        }, {
-            label: 'Play (dev)',
-            click: () => {
-                shell.openExternal('https://dev.dividat.com/play.html');
             }
         }, {
             type: 'separator'
