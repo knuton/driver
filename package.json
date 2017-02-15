@@ -33,10 +33,12 @@
     "ws": "^1.1.1"
   },
   "devDependencies": {
+    "aws-sdk": "^2.22.0",
     "binary-split": "^1.0.3",
     "electron": "^1.4.12",
     "electron-packager": "^8.4.0",
     "electron-winstaller": "^2.5.2",
+    "glob": "^7.1.1",
     "mime-types": "^2.1.14",
     "minimist": "^1.2.0",
     "nodemon": "^1.10.2",

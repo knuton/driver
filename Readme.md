@@ -4,7 +4,12 @@ Dividat drivers and hardware test suites.
 
 ## Download
 
-Download the [latest versions for Mac and Windows](https://github.com/dividat/driver/releases).
+Latest stable versions of the driver software:
+
+- [Windows 7/8/10](https://dist.dividat.ch/releases/driver/stable/win32/ia32/latest)
+- [macOS](https://dist.dividat.ch/releases/driver/stable/darwin/latest)
+
+The Windows application auto-updates to new versions on relaunch when connected to the Internet.
 
 ## Directories
 
@@ -109,11 +114,11 @@ Following these instructions, the Senso should have IP `169.254.1.10`.
 
 ## Releasing New Versions
 
-The Windows version of the driver is packaged into an installer using [Squirrel](https://github.com/Squirrel/Squirrel.Windows). Drivers installed in this way will auto-update by checking the GitHub releases page of this repo for new versions periodically.
+The Windows version of the driver is packaged into an installer using [Squirrel](https://github.com/Squirrel/Squirrel.Windows). Drivers installed in this way will auto-update by checking `dist.dividat.ch` for new versions periodically.
 
-To release an update to GitHub, set `GITHUB_RELEASE_TOKEN` to an authorized token and run `npm run release`.
+To release an update run `npm run release`. Credentials need to be available for the AWS SDK to pick up.
 
-This will trigger a fresh build and start a release script. The release script expects to release from master and a clean working tree. It will ask for a version number to use for the release, cross-check it with that in `package.json` and create a release draft with assets. A tag will be created on publishing the release draft, which happens manually in the browser.
+The command will trigger a fresh build and start a release script. The release script expects to release from a clean working tree. It will ask for a version number to use for the release, cross-check it with that in `package.json` and upload the release assets to S3.
 
 ## Contact
 
