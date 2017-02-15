@@ -7,7 +7,7 @@ const package = require('../package');
 
 const distDir = 'build/dist';
 
-function createInstaller(arch) {
+function createWindowsInstaller(arch) {
     const outputPath = `${distDir}/win32/${arch}`;
     const setupExeName = `Install ${package.productName} v${package.version}.exe`;
 
@@ -17,10 +17,9 @@ function createInstaller(arch) {
         appDirectory: `build/${package.productName}-win32-${arch}`,
         outputDirectory: outputPath,
         exe: `${package.productName}.exe`,
-        iconUrl: `https://s3.eu-central-1.amazonaws.com/dist.dividat.ch/win32/dividat-icon.ico`,
+        iconUrl: `https://dist.dividat.ch/win32/dividat-icon.ico`,
         setupExe: setupExeName,
-        remoteReleases: 'https://github.com/knuton/driver',
-        remoteToken: process.env.GITHUB_RELEASE_TOKEN || null
+        remoteReleases: `https://dist.dividat.ch/releases/driver/stable/win32/${arch}`,
     }).then(
         () => {
             // Workaround for issue with electron-winstaller
@@ -35,7 +34,7 @@ function createInstaller(arch) {
     );
 }
 
-function createArchive() {
+function createMacArchive() {
     const archiveName = `${distDir}/darwin/${package.productName} v${package.version} (Mac).zip`;
     const appName = `${package.productName}.app`;
     const appFolder = `build/${package.productName}-darwin-x64`;
@@ -52,5 +51,5 @@ function platformName(arch) {
 
 // We only maintain the installer and update channel for 32 architecture,
 // having no substantial gains from using 64 bit.
-createInstaller('ia32');
-createArchive();
+createWindowsInstaller('ia32');
+createMacArchive();

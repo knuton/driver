@@ -5,12 +5,13 @@ const assert = require('assert');
 const prompt = require('prompt');
 const semver = require('semver');
 const fs = require('fs');
+const glob = require('glob');
 const path = require('path');
 const spawnSync = require('child_process').spawnSync;
 const execSync = require('child_process').execSync;
-const got = require('got');
 const uriTemplates = require('uri-templates');
 const mime = require('mime-types');
+const aws = new require('aws-sdk');
 
 // Setup libraries
 
@@ -19,16 +20,9 @@ prompt.message = '';
 
 // Start release
 
-const assets = ['build/dist/darwin', 'build/dist/win32/ia32'].reduce(
-    (paths, dir) => paths.concat(fs.readdirSync(dir).map(name => path.join(dir, name))),
-    []
-);
-
 release(
     {
-        repo: constants.GH_UPDATE_REPO,
-        assets: assets,
-        targetBranch: 'windows-installer'
+        distDir: 'build/dist'
     }
 ).catch(
     (err) => { console.error(err); process.exit(1); }
@@ -44,11 +38,7 @@ async function release(options) {
     );
 
     const branch = exec('git rev-parse --abbrev-ref HEAD');
-    assert.equal(
-        branch,
-        options.targetBranch,
-        `Not on ${options.targetBranch}.`
-    );
+    const channel = channelFromBranch(branch);
 
     const version = (await query('tag', {
         description: 'Please enter semver number for this release',
@@ -63,75 +53,73 @@ async function release(options) {
     );
 
     const commit = exec('git rev-parse HEAD');
-    console.log(`The latest commit on ${branch} is: \n`);
+    console.log(`\nThe latest commit on ${branch} is: \n`);
+    console.log(indent(exec(`git show --quiet "${commit}"`)) + '\n');
 
-    console.log(exec(`git show --quiet "${commit}"`) + '\n');
+    const assets = glob.sync('**/*', { cwd: options.distDir, nodir: true });
+    console.log(`The release assets in ${options.distDir} are: \n`);
+    console.log(indent(assets.join('\n')) + '\n');
 
-    if (!await decide(`Release this as ${tag}?`, false)) abort();
-
-    console.log('\nCreating draft release ...');
-
-    let response;
-    try {
-        response = await post(
-            `https://api.github.com/repos/${options.repo}/releases`,
-            {
-                headers: {
-                  'content-type': 'application/json'
-                },
-                body: JSON.stringify({
-                    tag_name: tag,
-                    target_commitish: commit,
-                    name: tag,
-                    draft: true
-                }),
-                json: true
-            }
-    );
-  } catch (err) {
-      if (err.response != null) {
-          response = err.response;
-      } else {
-          throw err;
-      }
-  }
-
-    if (response.statusCode !== 201) {
-        console.error(response.body);
-        abort(`Failed to create draft. Has ${commit} been pushed?`);
-    } else {
-        console.log('Success: ' + response.body.html_url);
-    }
+    if (!await decide(`Release this on ${channel} as ${tag}?`, false)) abort();
 
     console.log('\nUploading assets ...');
 
-    const uriTmpl = uriTemplates(response.body.upload_url);
+    const s3 = new aws.S3({region: 'eu-central-1'});
     await Promise.all(
-        options.assets.map((assetPath) => {
+        assets.map((assetPath) => {
             const assetName = path.basename(assetPath);
-            const size = fs.statSync(assetPath).size;
+            const localAssetPath = path.join(options.distDir, assetPath);
+            const remoteAssetPath = ['releases', 'driver', channel, assetPath].join('/');
+            const remoteLatestPath = ['releases', 'driver', channel, path.dirname(assetPath), 'latest'].join('/');
+            const size = fs.statSync(localAssetPath).size;
             const mimeType = mime.lookup(assetName) || 'application/octet-stream';
-            console.log(assetPath, '\t', size, '\t', mimeType);
-            return post(
-                uriTmpl.fillFromObject({ name: assetName }),
-                {
-                  headers: {
-                      'content-length': size,
-                      'content-type': mimeType
-                  },
-                  body: fs.createReadStream(assetPath)
-                }
+            console.log(indent(assetPath), '\t', size, '\t', mimeType);
+            const upload = new Promise((resolve, reject) =>
+                s3.putObject(
+                    {
+                        Bucket: 'dist.dividat.ch',
+                        Key: remoteAssetPath,
+                        ACL: 'public-read',
+                        Body: fs.createReadStream(localAssetPath),
+                        ContentLength: size,
+                        ContentType: mimeType,
+                        CacheControl: cacheControl(remoteAssetPath)
+                    },
+                    (err, data) => err != null ? reject(err) : resolve(data)
+                )
             );
+
+            if (/Install.+\.exe$|.*Mac.*\.zip$/.test(assetPath)) {
+                // Create 'latest' redirects for executables/installers
+                // In order for redirects to work with CloudFront, the S3 website
+                // needs to be configured as an origin, not the S3 bucket hostname
+                return upload.then(() =>
+                    new Promise((resolve, reject) => {
+                        console.log('Creating ' + remoteLatestPath + ' -> ' + remoteAssetPath);
+                        s3.putObject(
+                            {
+                                Bucket: 'dist.dividat.ch',
+                                Key: remoteLatestPath,
+                                ACL: 'public-read',
+                                WebsiteRedirectLocation: '/' + remoteAssetPath,
+                                CacheControl: cacheControl(remoteLatestPath)
+                            },
+                            (err, data) => err != null ? reject(err) : resolve(data)
+                        );
+                    })
+                );
+            } else {
+                return upload;
+            }
         })
     );
 
-    console.log('\nFinished. Release draft is at: ' + response.body.html_url);
+    console.log('\nFinished.');
 
 }
 
 
 // Helpers
-
 
 function abort(message) {
     console.log(message || 'Aborting.');
@@ -142,22 +130,23 @@ function exec(cmd) {
     return execSync(cmd, { encoding: 'utf8' }).trim();
 }
 
-async function post(uri, params) {
-    if (process.env.GITHUB_RELEASE_TOKEN == null) {
-        abort('Need $GITHUB_RELEASE_TOKEN to provide OAuth token.');
+function indent(block) {
+    return block.replace(/^(?!\s*$)/mg, '    ');
+}
+
+function channelFromBranch(branchName) {
+    switch (branchName) {
+        case 'master':
+            return 'stable';
+        // TODO Introduce a dev channel
+        case 'develop':
+        default:
+            return 'stable';
     }
-    const headers = {
-        Authorization: 'token ' + process.env.GITHUB_RELEASE_TOKEN,
-        'User-Agent': 'dividat'
-    };
-    const options = Object.assign(
-        {},
-        params,
-        {
-            headers: Object.assign(headers, params.headers)
-        }
-    );
-    return got.post(uri, options);
+}
+
+function cacheControl(path) {
+    return /latest$|RELEASES$/.test(path) ? 'max-age=0' : 'max-age=3600';
 }
 
 // A slim promisifying wrapper around prompt

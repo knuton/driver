@@ -112,20 +112,12 @@ function scheduleUpdateCheck() {
 }
 
 function checkForUpdates() {
-    const repo = constants.GH_UPDATE_REPO;
-    got.get(
-        `https://api.github.com/repos/${repo}/releases/latest`,
-        { json: true }
-    ).then((response) => {
-        electron.autoUpdater.setFeedURL(
-            `https://github.com/${repo}/releases/download/${response.body.tag_name}`
-        );
-        // If an update is available, it will be downloaded, but not installed until
-        // the application is quit and restarted. We don't bother the user with an
-        // "update available" message but trust that the application will be restarted,
-        // at the latest when issues with the product are encountered.
-        electron.autoUpdater.checkForUpdates();
-    });
+    electron.autoUpdater.setFeedURL(`https://dist.dividat.ch/releases/driver/stable/win32/ia32`);
+    // If an update is available, it will be downloaded, but not installed until
+    // the application is quit and restarted. We don't bother the user with an
+    // "update available" message but trust that the application will be restarted,
+    // at the latest when issues with the product are encountered.
+    electron.autoUpdater.checkForUpdates();
 }
 
 module.exports = handler;
