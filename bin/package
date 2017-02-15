@@ -1,0 +1,39 @@
+#! /usr/bin/env node
+const electronInstaller = require('electron-winstaller');
+const rcedit = require('rcedit');
+const package = require('../package');
+
+function createInstaller(arch) {
+    const outputPath = `build/dist/win32/${arch}`;
+    const setupExeName = `Install ${package.productName} v${package.version}.exe`;
+
+    console.log('Building installer for ' + platformName(arch));
+
+    electronInstaller.createWindowsInstaller({
+        appDirectory: `build/${package.productName}-win32-${arch}`,
+        outputDirectory: outputPath,
+        exe: `${package.productName}.exe`,
+        iconUrl: `https://s3.eu-central-1.amazonaws.com/dist.dividat.ch/win32/dividat-icon.ico`,
+        setupExe: setupExeName,
+        remoteReleases: 'https://github.com/knuton/driver'
+    }).then(
+        () => {
+            // Workaround for issue with electron-winstaller
+            // https://github.com/electron/windows-installer/issues/119#issuecomment-279945093
+            rcedit(
+                `${outputPath}/${setupExeName}`,
+                { icon: 'src/icons/dividat-installer-icon.ico' },
+                () => {}
+            );
+        },
+        (e) => console.error(`Error building ${platformName(arch)} installer: ${e.message}`)
+    );
+}
+
+function platformName(arch) {
+    return 'win32 ' + arch;
+}
+
+// We only maintain the installer and update channel for 32 architecture,
+// having no substantial gains from using 64 bit.
+createInstaller('ia32');

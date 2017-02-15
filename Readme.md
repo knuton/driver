@@ -23,7 +23,11 @@ To start with Electron (as in production) run `npm run electron`.
 
 This will start the driver as an Electron application. Note that no window will be created. The application lives in the menubar.
 
-To build Electron releases: `npm run build`
+## Building Releases
+
+To build Electron executables and installers: `npm run build`
+
+Additional dependencies are required for creating the installers. If you use a Unix system, you will need to [install Mono](http://www.mono-project.com/download/) in order to create and sign installers for Windows.
 
 ## SSL
 
