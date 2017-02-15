@@ -19,7 +19,8 @@ function createInstaller(arch) {
         exe: `${package.productName}.exe`,
         iconUrl: `https://s3.eu-central-1.amazonaws.com/dist.dividat.ch/win32/dividat-icon.ico`,
         setupExe: setupExeName,
-        remoteReleases: 'https://github.com/knuton/driver'
+        remoteReleases: 'https://github.com/knuton/driver',
+        remoteToken: process.env.GITHUB_RELEASE_TOKEN || null
     }).then(
         () => {
             // Workaround for issue with electron-winstaller

@@ -7,15 +7,25 @@ const log = require('electron-log');
 
 const Config = require('electron-config');
 const config = new Config();
-const configKeys = require('../configKeys');
+const constants = require('../constants');
+const env = process.env;
 
-const shortcutLocations = ['StartMenu', 'Startup'];
+/** Handle installation and update lifecycle events.
+
+Windows only.
+
+*/
+
+// Installation Events
+
 
 function run(args, done) {
     const updateExe = path.resolve(path.dirname(process.execPath), '..', 'Update.exe');
     debug('Spawning `%s` with args `%s`', updateExe, args);
     spawn(updateExe, args, { detached: true }).on('close', done);
 }
+
+const shortcutLocations = ['StartMenu', 'Startup'];
 
 function handler() {
     if (process.platform === 'win32') {
@@ -28,10 +38,7 @@ function handler() {
                 ['--createShortcut=' + target + '', '--shortcut-locations=' + shortcutLocations.join(',')],
                 electron.app.quit
             );
-
-            if (cmd === '--squirrel-install') {
-                config.set(configKeys.AUTOSTART_PLAY, true);
-            }
+            createPlayShortcuts(cmd === '--squirrel-install' ? 'create' : 'replace');
 
             return true;
         }
@@ -41,6 +48,7 @@ function handler() {
                 ['--removeShortcut=' + target + '', '--shortcut-locations=' + shortcutLocations.join(',')],
                 electron.app.quit
             );
+            removePlayShortcuts();
             return true;
         }
         if (cmd === '--squirrel-obsolete') {
@@ -53,6 +61,41 @@ function handler() {
 
     return false;
 }
+
+const playShortcutLocations = [
+    `${env.USERPROFILE}\\Desktop\\Dividat Play.lnk`,
+    `${env.USERPROFILE}\\AppData\\Roaming\\Microsoft\\Windows\\Start Menu\\Programs\\Startup\\Dividat Play.lnk`
+];
+
+// Create shortcuts to launch Play in Chrome's kiosk mode
+function createPlayShortcuts(operation) {
+    // Locate path to chrome.exe starting from newest to oldest Windows versions
+    const chromePath = [
+        `${env['ProgramFiles(x86)']}\\Google\\Chrome\\Application\\chrome.exe`,
+        `${env.ProgramW6432}\\Google\\Chrome\\Application\\chrome.exe`,
+        `${env.ProgramFiles}\\Google\\Chrome\\Application\\chrome.exe`,
+        `${env.LOCALAPPDATA}\\Google\\Chrome\\chrome.exe`,
+        `${env.USERPROFILE}\\Local Settings\\Application Data\\Google\\Chrome\\chrome.exe`
+    ].find(require('fs').existsSync);
+    if (chromePath != null) {
+        const options = {
+            target: chromePath,
+            args: `--kiosk ${constants.PLAY_URL}`,
+            description: 'Dividat Play',
+            icon: process.execPath,
+            iconIndex: 0
+        };
+        playShortcutLocations.forEach(path => electron.shell.writeShortcutLink(path, operation, options));
+    }
+}
+
+function removePlayShortcuts() {
+    playShortcutLocations.forEach(electron.shell.moveItemToTrash);
+}
+
+
+// Update Checking
+
 
 function scheduleUpdateCheck() {
     // Silently log failing update checks
@@ -69,7 +112,7 @@ function scheduleUpdateCheck() {
 }
 
 function checkForUpdates() {
-    const repo = configKeys.GH_UPDATE_REPO;
+    const repo = constants.GH_UPDATE_REPO;
     got.get(
         `https://api.github.com/repos/${repo}/releases/latest`,
         { json: true }

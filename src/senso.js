@@ -16,7 +16,7 @@ const DEFAULT_SENSO_ADDRESS = '169.254.1.10';
 const log = require('electron-log');
 
 let config;
-const configKeys = require('./configKeys');
+const constants = require('./constants');
 try {
     const Config = require('electron-config');
     config = new Config();
@@ -58,7 +58,7 @@ function factory(sensoAddress, recorder) {
     let dataConnection;
     let controlConnection;
 
-    var sensoAddress = sensoAddress || config.get(configKeys.SENSO_ADDRESS) || DEFAULT_SENSO_ADDRESS;
+    var sensoAddress = sensoAddress || config.get(constants.SENSO_ADDRESS_KEY) || DEFAULT_SENSO_ADDRESS;
 
     connect(sensoAddress);
 
@@ -144,7 +144,7 @@ function factory(sensoAddress, recorder) {
 
                     case "Connect":
                         sensoAddress = msg.address;
-                        config.set(configKeys.SENSO_ADDRESS, sensoAddress);
+                        config.set(constants.SENSO_ADDRESS_KEY, sensoAddress);
                         connect();
                         break;
 

@@ -4,14 +4,12 @@ const app = electron.app;
 const Menu = electron.Menu;
 const Tray = electron.Tray;
 
-const PLAY_URL = 'https://play.dividat.com/';
-
 // Run handler for Windows installer options
 if (require('./installation/handle-squirrel-events')()) return;
 
 const Config = require('electron-config');
 const config = new Config();
-const configKeys = require('./configKeys');
+const constants = require('./constants');
 
 const log = require('electron-log');
 log.transports.file.level = 'info';
@@ -30,22 +28,12 @@ app.on('ready', () => {
 
     const logPath = log.findLogPath('Dividat Driver');
 
-    // Start Play
-    if (config.get(configKeys.AUTOSTART_PLAY)) {
-        shell.openExternal(PLAY_URL);
-    }
-
     // Create tray
     appIcon = new Tray(__dirname + '/icons/16x16.png');
     const contextMenu = Menu.buildFromTemplate([
         {
             label: 'Play',
-            click: () => shell.openExternal(PLAY_URL)
-        }, {
-            label: 'Always start Play',
-            type: 'checkbox',
-            checked: config.get(configKeys.AUTOSTART_PLAY),
-            click: () => config.set(configKeys.AUTOSTART_PLAY, !config.get(configKeys.AUTOSTART_PLAY))
+            click: () => shell.openExternal(constants.PLAY_URL)
         }, {
             type: 'separator'
         }, {
