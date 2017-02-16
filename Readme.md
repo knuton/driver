@@ -1,6 +1,6 @@
 # Dividat Driver
 
-Drivers and testing suite for Senso Hardware.
+Dividat drivers and hardware test suites.
 
 ## Directories
 
@@ -92,7 +92,7 @@ These instructions are valid for any Mac system, but are relevant especially for
   # Senso Prototype
   dhcp-host=<MAC-ADDRESS>,169.254.1.10
   ```
-  
+
   where `<MAC-ADDRESS>` is a MAC address with or without wildcards (`*`). `00:50:c2:3d:*:*` works for all Sensos using BDT's address space.
 - Start dnsmasq as a service: `brew services start dnsmasq`
 - Now (re-)plug in the Senso
@@ -101,4 +101,4 @@ Following these instructions, the Senso should have IP `169.254.1.10`.
 
 ## Contact
 
-Adarsh Amirtham <adarsh@dividat.ch>, Dividat GmbH
+Adarsh Amirtham <adarsh@dividat.com>, Dividat GmbH

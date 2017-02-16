@@ -2,7 +2,7 @@
   "name": "dividat-driver",
   "productName": "Dividat Driver",
   "version": "0.2.1",
-  "description": "Senso drivers and test suite",
+  "description": "Dividat drivers and hardware test suites",
   "main": "src/main.js",
   "scripts": {
     "start": "nodemon src/server.js",
@@ -12,14 +12,14 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+ssh://git@github.com/dividat/senso.git"
+    "url": "git+ssh://git@github.com/dividat/driver.git"
   },
-  "author": "",
-  "license": "UNLICENSED",
+  "author": "Dividat GmbH",
+  "license": "MIT",
   "bugs": {
-    "url": "https://github.com/dividat/senso/issues"
+    "url": "https://github.com/dividat/driver/issues"
   },
-  "homepage": "https://github.com/dividat/senso#readme",
+  "homepage": "https://github.com/dividat/driver#readme",
   "dependencies": {
     "cors": "^2.8.1",
     "electron-config": "^0.2.1",
