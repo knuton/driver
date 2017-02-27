@@ -25,7 +25,7 @@ This will start the driver as an Electron application. Note that no window will 
 
 To build Electron releases: `npm run build`
 
-# SSL
+## SSL
 
 The server encrypts traffic using a signed certificate for the host `localhost.dividat.com` (`localhost.dividat.com` resolves to `127.0.0.1`).
 
