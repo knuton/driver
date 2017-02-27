@@ -103,6 +103,14 @@ These instructions are valid for any Mac system, but are relevant especially for
 
 Following these instructions, the Senso should have IP `169.254.1.10`.
 
+## Releasing New Versions
+
+The Windows version of the driver is packaged into an installer using [Squirrel](https://github.com/Squirrel/Squirrel.Windows). Drivers installed in this way will auto-update by checking the GitHub releases page of this repo for new versions periodically.
+
+To release an update to GitHub, set `GITHUB_RELEASE_TOKEN` to an authorized token and run `npm run release`.
+
+This will trigger a fresh build and start a release script. The release script expects to release from master and a clean working tree. It will ask for a version number to use for the release, cross-check it with that in `package.json` and create a release draft with assets. A tag will be created on publishing the release draft, which happens manually in the browser.
+
 ## Contact
 
 Adarsh Amirtham <adarsh@dividat.com>, Dividat GmbH
