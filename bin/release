@@ -19,10 +19,15 @@ prompt.message = '';
 
 // Start release
 
+const assets = ['build/dist/darwin', 'build/dist/win32/ia32'].reduce(
+    (paths, dir) => paths.concat(fs.readdirSync(dir).map(name => path.join(dir, name))),
+    []
+);
+
 release(
     {
         repo: configKeys.GH_UPDATE_REPO,
-        assetDir: 'build/dist/win32/ia32',
+        assets: assets,
         targetBranch: 'windows-installer'
     }
 ).catch(
@@ -84,7 +89,11 @@ async function release(options) {
             }
     );
   } catch (err) {
-      response = err.response;
+      if (err.response != null) {
+          response = err.response;
+      } else {
+          throw err;
+      }
   }
 
     if (response.statusCode !== 201) {
@@ -96,12 +105,10 @@ async function release(options) {
 
     console.log('\nUploading assets ...');
 
-    const assets = fs.readdirSync(options.assetDir);
-
     const uriTmpl = uriTemplates(response.body.upload_url);
     await Promise.all(
-        assets.map((assetName) => {
-            const assetPath = path.join(options.assetDir, assetName);
+        options.assets.map((assetPath) => {
+            const assetName = path.basename(assetPath);
             const size = fs.statSync(assetPath).size;
             const mimeType = mime.lookup(assetName) || 'application/octet-stream';
             console.log(assetPath, '\t', size, '\t', mimeType);
