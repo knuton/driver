@@ -9,7 +9,6 @@ const glob = require('glob');
 const path = require('path');
 const spawnSync = require('child_process').spawnSync;
 const execSync = require('child_process').execSync;
-const uriTemplates = require('uri-templates');
 const mime = require('mime-types');
 const aws = new require('aws-sdk');
 
