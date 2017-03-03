@@ -118,7 +118,7 @@ The Windows version of the driver is packaged into an installer using [Squirrel]
 
 To release an update run `npm run release`. Credentials need to be available for the AWS SDK to pick up.
 
-The command will trigger a fresh build and start a release script. The release script expects to release from a clean working tree. It will ask for a version number to use for the release, cross-check it with that in `package.json` and upload the release assets to S3.
+The command will trigger a fresh build and start a release script. The release script expects to release from a clean working tree. It will ask for a version number to use for the release and cross-check it with that in `package.json` and the tag of `HEAD`. If all is well, it will upload the release assets to S3.
 
 ## Contact
 
