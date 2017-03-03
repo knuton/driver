@@ -2,6 +2,10 @@
 
 Dividat drivers and hardware test suites.
 
+## Download
+
+Download the [latest versions for Mac and Windows](https://github.com/dividat/driver/releases).
+
 ## Directories
 
 - `bin/`: tooling
