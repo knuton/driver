@@ -2,7 +2,6 @@ const path = require('path');
 const spawn = require('child_process').spawn;
 const debug = require('debug')('handle-squirrel-events');
 const electron = require('electron');
-const got = require('got');
 const log = require('electron-log');
 
 const Config = require('electron-config');
