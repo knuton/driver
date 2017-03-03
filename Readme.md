@@ -1,6 +1,15 @@
 # Dividat Driver
 
-Drivers and testing suite for Senso Hardware.
+Dividat drivers and hardware test suites.
+
+## Download
+
+Latest stable versions of the driver software:
+
+- [Windows 7/8/10](https://dist.dividat.ch/releases/driver/stable/win32/ia32/latest)
+- [macOS](https://dist.dividat.ch/releases/driver/stable/darwin/latest)
+
+The Windows application auto-updates to new versions on relaunch when connected to the Internet.
 
 ## Directories
 
@@ -23,9 +32,13 @@ To start with Electron (as in production) run `npm run electron`.
 
 This will start the driver as an Electron application. Note that no window will be created. The application lives in the menubar.
 
-To build Electron releases: `npm run build`
+## Building Releases
 
-# SSL
+To build Electron executables and installers: `npm run build`
+
+Additional dependencies are required for creating the installers. If you use a Unix system, you will need to [install Mono](http://www.mono-project.com/download/) in order to create and sign installers for Windows.
+
+## SSL
 
 The server encrypts traffic using a signed certificate for the host `localhost.dividat.com` (`localhost.dividat.com` resolves to `127.0.0.1`).
 
@@ -92,13 +105,21 @@ These instructions are valid for any Mac system, but are relevant especially for
   # Senso Prototype
   dhcp-host=<MAC-ADDRESS>,169.254.1.10
   ```
-  
+
   where `<MAC-ADDRESS>` is a MAC address with or without wildcards (`*`). `00:50:c2:3d:*:*` works for all Sensos using BDT's address space.
 - Start dnsmasq as a service: `brew services start dnsmasq`
 - Now (re-)plug in the Senso
 
 Following these instructions, the Senso should have IP `169.254.1.10`.
 
+## Releasing New Versions
+
+The Windows version of the driver is packaged into an installer using [Squirrel](https://github.com/Squirrel/Squirrel.Windows). Drivers installed in this way will auto-update by checking `dist.dividat.ch` for new versions periodically.
+
+To release an update run `npm run release`. Credentials need to be available for the AWS SDK to pick up.
+
+The command will trigger a fresh build and start a release script. The release script expects to release from a clean working tree. It will ask for a version number to use for the release and cross-check it with that in `package.json` and the tag of `HEAD`. If all is well, it will upload the release assets to S3.
+
 ## Contact
 
-Adarsh Amirtham <adarsh@dividat.ch>, Dividat GmbH
+Adarsh Amirtham <adarsh@dividat.com>, Dividat GmbH

@@ -1,25 +1,26 @@
 {
   "name": "dividat-driver",
   "productName": "Dividat Driver",
-  "version": "0.2.1",
-  "description": "Senso drivers and test suite",
+  "version": "0.2.2",
+  "description": "Dividat drivers and hardware test suites",
   "main": "src/main.js",
   "scripts": {
     "start": "nodemon src/server.js",
     "electron": "electron .",
-    "build": "rimraf build; mkdir -p build; electron-packager . --platform darwin,win32 --icon src/icons/dividat-icon --arch x64,ia32 --out build",
+    "build": "rimraf build; mkdir -p build; bin/build; bin/package",
+    "release": "npm run build && bin/release",
     "replay": "nodemon --watch src-test/ src-test/"
   },
   "repository": {
     "type": "git",
-    "url": "git+ssh://git@github.com/dividat/senso.git"
+    "url": "git+ssh://git@github.com/dividat/driver.git"
   },
-  "author": "",
-  "license": "UNLICENSED",
+  "author": "Dividat GmbH",
+  "license": "MIT",
   "bugs": {
-    "url": "https://github.com/dividat/senso/issues"
+    "url": "https://github.com/dividat/driver/issues"
   },
-  "homepage": "https://github.com/dividat/senso#readme",
+  "homepage": "https://github.com/dividat/driver#readme",
   "dependencies": {
     "cors": "^2.8.1",
     "electron-config": "^0.2.1",
@@ -31,11 +32,18 @@
     "ws": "^1.1.1"
   },
   "devDependencies": {
+    "aws-sdk": "^2.22.0",
     "binary-split": "^1.0.3",
     "electron": "^1.4.12",
     "electron-packager": "^8.4.0",
+    "electron-winstaller": "^2.5.2",
+    "glob": "^7.1.1",
+    "mime-types": "^2.1.14",
     "minimist": "^1.2.0",
     "nodemon": "^1.10.2",
-    "rimraf": "^2.5.4"
+    "prompt": "^1.0.0",
+    "rcedit": "^0.7.0",
+    "rimraf": "^2.5.4",
+    "semver": "^5.3.0"
   }
 }

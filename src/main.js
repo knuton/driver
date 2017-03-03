@@ -4,8 +4,12 @@ const app = electron.app;
 const Menu = electron.Menu;
 const Tray = electron.Tray;
 
+// Run handler for Windows installer options
+if (require('./installation/handle-squirrel-events')()) return;
+
 const Config = require('electron-config');
 const config = new Config();
+const constants = require('./constants');
 
 const log = require('electron-log');
 log.transports.file.level = 'info';
@@ -29,9 +33,7 @@ app.on('ready', () => {
     const contextMenu = Menu.buildFromTemplate([
         {
             label: 'Play',
-            click: () => {
-                shell.openExternal('https://play.dividat.com/');
-            }
+            click: () => shell.openExternal(constants.PLAY_URL)
         }, {
             type: 'separator'
         }, {
