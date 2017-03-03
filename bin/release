@@ -51,6 +51,11 @@ async function release(options) {
         require('../package').version,
         'Version must match with package.json.'
     );
+    assert.equal(
+        tag,
+        exec('git describe --exact-match HEAD'),
+        'Version must match with Git tag of HEAD.'
+    );
 
     const commit = exec('git rev-parse HEAD');
     console.log(`\nThe latest commit on ${branch} is: \n`);
