@@ -23,6 +23,7 @@ function createWindowsInstaller(arch) {
         exe: `${package.productName}.exe`,
         iconUrl: `https://dist.dividat.ch/win32/dividat-icon.ico`,
         setupExe: setupExeName,
+        noMsi: true,
         remoteReleases: `https://dist.dividat.ch/releases/driver/stable/win32/${arch}`,
     }).then(
         () => {
