@@ -1,5 +1,7 @@
 # Dividat Driver
 
+[![CI Status](https://ci.appveyor.com/api/projects/status/y0m90wpmpc2dk63e?svg=true)](https://ci.appveyor.com/project/JohannesEmerich/driver)
+
 Dividat drivers and hardware test suites.
 
 ## Download
