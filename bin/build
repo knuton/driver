@@ -20,6 +20,7 @@ packager(
     (err, appPaths) => {
         if (err) {
             console.error(`Error building Electron app: ${err.message}`);
+            process.exit(1);
         }
     }
 );

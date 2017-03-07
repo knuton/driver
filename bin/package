@@ -33,7 +33,10 @@ function createWindowsInstaller(arch) {
                 () => {}
             );
         },
-        (e) => console.error(`Error building ${platformName(arch)} installer: ${e.message}`)
+        (e) => {
+            console.error(`Error building ${platformName(arch)} installer: ${e.message}`);
+            process.exit(1);
+        }
     );
 }
 
