@@ -2,7 +2,10 @@
 const electronInstaller = require('electron-winstaller');
 const rcedit = require('rcedit');
 const execSync = require('child_process').execSync;
+const fs = require('fs');
+const glob = require('glob');
 const path = require('path');
+const JSZip = require('jszip');
 const package = require('../package');
 
 const distDir = 'build/dist';
@@ -16,9 +19,11 @@ function createWindowsInstaller(arch) {
     electronInstaller.createWindowsInstaller({
         appDirectory: `build/${package.productName}-win32-${arch}`,
         outputDirectory: outputPath,
+        name: 'dividat_driver',
         exe: `${package.productName}.exe`,
         iconUrl: `https://dist.dividat.ch/win32/dividat-icon.ico`,
         setupExe: setupExeName,
+        noMsi: true,
         remoteReleases: `https://dist.dividat.ch/releases/driver/stable/win32/${arch}`,
     }).then(
         () => {
@@ -30,7 +35,10 @@ function createWindowsInstaller(arch) {
                 () => {}
             );
         },
-        (e) => console.error(`Error building ${platformName(arch)} installer: ${e.message}`)
+        (e) => {
+            console.error(`Error building ${platformName(arch)} installer: ${e.message}`);
+            process.exit(1);
+        }
     );
 }
 
@@ -42,7 +50,23 @@ function createMacArchive() {
     console.log('Creating archive for darwin');
 
     execSync(`mkdir -p "${path.dirname(archiveName)}"`);
-    execSync(`cd "${appFolder}" && zip -r -X "../../${archiveName}" "${appName}"`);
+
+    // Create the ZIP archive with Node for portability
+    const archive = new JSZip().folder(appName);
+    const contents = glob.sync(`${appName}/**/*`, { cwd: appFolder, nodir: true });
+    for (let file of contents) {
+        archive.file(
+            file,
+            fs.createReadStream(path.join(appFolder, file)),
+            { type: 'nodebuffer', createFolders: true, compression: 'DEFLATE' }
+        );
+    }
+
+    archive.generateNodeStream(
+        { streamFiles: true }
+    ).pipe(
+        fs.createWriteStream(archiveName)
+    );
 }
 
 function platformName(arch) {
