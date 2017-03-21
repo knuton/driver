@@ -40,6 +40,10 @@ To build Electron executables and installers: `npm run build`
 
 Additional dependencies are required for creating the installers. If you use a Unix system, you will need to [install Mono](http://www.mono-project.com/download/) in order to create and sign installers for Windows.
 
+## Change Log
+
+Update the change log for any functional changes, at the latest before every release. See [keepachangelog.com](http://keepachangelog.com/) for formatting and conventions.
+
 ## SSL
 
 The server encrypts traffic using a signed certificate for the host `localhost.dividat.com` (`localhost.dividat.com` resolves to `127.0.0.1`).
