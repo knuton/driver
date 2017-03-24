@@ -24,7 +24,7 @@ The Windows application auto-updates to new versions on relaunch when connected 
 
 ## Getting started
 
-1. Install dependencies: `npm install`
+1. Install dependencies: `yarn`
 2. Start the drivers in development mode: `npm start`. The default Senso address is `169.254.1.10`. The address can be changed via a WebSocket command (via `diviapps` UI) or with command line argument: `npm start -- --address ADDRESS`.
 3. Driver can now be reached at <https://localhost.dividat.com:8380>. Use `diviapps` for a nice interface.
 
