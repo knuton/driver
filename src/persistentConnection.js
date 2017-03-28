@@ -1,10 +1,12 @@
 const net = require('net');
 const log = require('electron-log');
 
-function Connection(host, port, onData) {
+function Connection(host, port, onData, name) {
     this.host = host;
     this.port = port;
     this.onData = onData;
+
+    this.name = name || "";
 
     this.connected = false;
     this.destroyed = false;
@@ -73,7 +75,7 @@ Connection.prototype.onError = function(err) {
 }
 
 Connection.prototype.formatLog = function(msg) {
-    return this.host + ":" + this.port + " - " + msg;
+    return this.name + " (" + this.host + ":" + this.port + ") - " + msg;
 }
 
 module.exports = Connection;
