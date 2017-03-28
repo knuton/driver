@@ -20,6 +20,7 @@ function createWindowsInstaller(arch) {
         appDirectory: `build/${package.productName}-win32-${arch}`,
         outputDirectory: outputPath,
         name: 'dividat_driver',
+        copyright: `(C) ${new Date().getFullYear()} ${package.author}`,
         exe: `${package.productName}.exe`,
         iconUrl: `https://dist.dividat.ch/win32/dividat-icon.ico`,
         setupExe: setupExeName,
