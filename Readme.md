@@ -40,6 +40,10 @@ To build Electron executables and installers: `npm run build`
 
 Additional dependencies are required for creating the installers. If you use a Unix system, you will need to [install Mono](http://www.mono-project.com/download/) in order to create and sign installers for Windows.
 
+## Change Log
+
+Update the change log for any functional changes, at the latest before every release. See [keepachangelog.com](http://keepachangelog.com/) for formatting and conventions.
+
 ## SSL
 
 The server encrypts traffic using a signed certificate for the host `localhost.dividat.com` (`localhost.dividat.com` resolves to `127.0.0.1`).
@@ -118,7 +122,19 @@ Following these instructions, the Senso should have IP `169.254.1.10`.
 
 The Windows version of the driver is packaged into an installer using [Squirrel](https://github.com/Squirrel/Squirrel.Windows). Drivers installed in this way will auto-update by checking `dist.dividat.ch` for new versions periodically.
 
-To release an update run `npm run release`. Credentials need to be available for the AWS SDK to pick up.
+### Checklist
+
+- [ ] Check that changelog is up to date
+- [ ] Check that tests are green
+- [ ] Merge into master
+- [ ] Tag release with semver number (e.g. `v0.3.1`)
+- [ ] Push master to GitHub, including `--tags`
+
+### Releasing to `dist.dividat.ch`
+
+- `npm run release`
+
+Credentials need to be available for the AWS SDK to pick up.
 
 The command will trigger a fresh build and start a release script. The release script expects to release from a clean working tree. It will ask for a version number to use for the release and cross-check it with that in `package.json` and the tag of `HEAD`. If all is well, it will upload the release assets to S3.
 
