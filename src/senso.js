@@ -93,9 +93,13 @@ function factory(sensoAddress, recorder) {
         controlEmitter.on('raw', send);
 
         ws.on('senso_control', (data) => {
-            var socket = controlConnection.getSocket();
-            if (socket) {
-                socket.write(data);
+            try {
+                var socket = controlConnection.getSocket();
+                if (socket) {
+                    socket.write(data);
+                }
+            } catch (e) {
+                log.error("Error on handling senso_control:", e);
             }
         })
 
