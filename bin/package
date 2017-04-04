@@ -52,7 +52,7 @@ async function createWindowsInstaller(arch) {
 async function signBinaries(dir) {
     return Promise.all(
         util.findBinaries(dir).map(binaryPath => {
-            if (process.env.CODE_SIGNING_CERT == null || process.env.CODE_SIGNING_PW == null) {
+            if (process.env.CODE_SIGNING_CERT == null) {
                 console.warn(`No certificate given, not signing ${binaryPath}`);
                 return Promise.resolve();
             }
