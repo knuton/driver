@@ -9,11 +9,12 @@ packager(
         icon: 'src/icons/dividat-icon',
         dir: '.',
         out: 'build',
+        appCopyright: `(C) ${new Date().getFullYear()} ${package.author}`,
         win32metadata: {
             CompanyName: package.author,
             ProductName: package.productName,
             InternalName: package.productName,
-            FileDescription: package.description,
+            FileDescription: package.productName,
             OriginalFilename: `${package.productName}.exe`
         }
     },

@@ -4,6 +4,7 @@ const constants = require('../src/constants');
 const assert = require('assert');
 const prompt = require('prompt');
 const semver = require('semver');
+const signcode = require('signcode');
 const fs = require('fs');
 const glob = require('glob');
 const path = require('path');
@@ -11,6 +12,7 @@ const spawnSync = require('child_process').spawnSync;
 const execSync = require('child_process').execSync;
 const mime = require('mime-types');
 const aws = new require('aws-sdk');
+const util = require('./util');
 
 // Setup libraries
 
@@ -19,13 +21,12 @@ prompt.message = '';
 
 // Start release
 
-release(
-    {
-        distDir: 'build/dist'
-    }
-).catch(
-    (err) => { console.error(err); process.exit(1); }
-);
+release({
+    distDir: 'build/dist'
+}).catch((err) => {
+    console.error(err);
+    process.exit(1);
+});
 
 async function release(options) {
     prompt.start();
@@ -35,6 +36,15 @@ async function release(options) {
         0,
         "There are uncommited changes."
     );
+
+    try {
+        await Promise.all(util.findBinaries(options.distDir).map(binaryPath =>
+            util.promisify(signcode.verify, { path: binaryPath })
+        ));
+    } catch (err) {
+        console.error('Refusing to release unsigned binaries:', err.message);
+        abort();
+    }
 
     const branch = exec('git rev-parse --abbrev-ref HEAD');
     const channel = channelFromBranch(branch);
@@ -68,7 +78,7 @@ async function release(options) {
 
     console.log('\nUploading assets ...');
 
-    const s3 = new aws.S3({region: 'eu-central-1'});
+    const s3 = new aws.S3({ region: 'eu-central-1' });
     await Promise.all(
         assets.map((assetPath) => {
             const assetName = path.basename(assetPath);

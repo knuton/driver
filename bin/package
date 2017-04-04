@@ -1,44 +1,75 @@
-#! /usr/bin/env node
+#! /usr/bin/env node --harmony-async-await
+
 const electronInstaller = require('electron-winstaller');
 const rcedit = require('rcedit');
+const signcode = require('signcode');
 const execSync = require('child_process').execSync;
 const fs = require('fs');
 const glob = require('glob');
+const mkdirp = require('mkdirp');
 const path = require('path');
 const JSZip = require('jszip');
 const package = require('../package');
+const util = require('./util');
 
 const distDir = 'build/dist';
 
-function createWindowsInstaller(arch) {
+async function createWindowsInstaller(arch) {
     const outputPath = `${distDir}/win32/${arch}`;
+    const appPath = `build/${package.productName}-win32-${arch}`;
     const setupExeName = `Install ${package.productName} v${package.version}.exe`;
 
-    console.log('Building installer for ' + platformName(arch));
+    await signBinaries(appPath);
 
-    electronInstaller.createWindowsInstaller({
-        appDirectory: `build/${package.productName}-win32-${arch}`,
+    console.log('Building installer for ' + platformName(arch));
+    return electronInstaller.createWindowsInstaller({
+        appDirectory: appPath,
         outputDirectory: outputPath,
         name: 'dividat_driver',
+        copyright: `(C) ${new Date().getFullYear()} ${package.author}`,
         exe: `${package.productName}.exe`,
         iconUrl: `https://dist.dividat.ch/win32/dividat-icon.ico`,
         setupExe: setupExeName,
         noMsi: true,
         remoteReleases: `https://dist.dividat.ch/releases/driver/stable/win32/${arch}`,
+    }).then(() => {
+        // Set icon on installer
+        // Workaround for issue with electron-winstaller
+        // https://github.com/electron/windows-installer/issues/119#issuecomment-279945093
+        return util.promisify(
+            rcedit,
+            `${outputPath}/${setupExeName}`,
+            { icon: 'src/icons/dividat-installer-icon.ico' }
+        );
     }).then(
-        () => {
-            // Workaround for issue with electron-winstaller
-            // https://github.com/electron/windows-installer/issues/119#issuecomment-279945093
-            rcedit(
-                `${outputPath}/${setupExeName}`,
-                { icon: 'src/icons/dividat-installer-icon.ico' },
-                () => {}
+        () => signBinaries(outputPath)
+    ).catch((e) => {
+        console.error(`Error building ${platformName(arch)} installer: ${e.message}`);
+        process.exit(1);
+    });
+}
+
+async function signBinaries(dir) {
+    return Promise.all(
+        util.findBinaries(dir).map(binaryPath => {
+            if (process.env.CODE_SIGNING_CERT == null) {
+                console.warn(`No certificate given, not signing ${binaryPath}`);
+                return Promise.resolve();
+            }
+
+            console.log(`Signing ${binaryPath}`);
+            return util.promisify(
+                signcode.sign, {
+                    cert: process.env.CODE_SIGNING_CERT,
+                    password: process.env.CODE_SIGNING_PW,
+                    path: binaryPath,
+                    hash: ['sha1', 'sha256'],
+                    name: package.productName,
+                    site: 'https://www.dividat.com/',
+                    overwrite: true
+                }
             );
-        },
-        (e) => {
-            console.error(`Error building ${platformName(arch)} installer: ${e.message}`);
-            process.exit(1);
-        }
+        })
     );
 }
 
@@ -49,7 +80,7 @@ function createMacArchive() {
 
     console.log('Creating archive for darwin');
 
-    execSync(`mkdir -p "${path.dirname(archiveName)}"`);
+    mkdirp.sync(path.dirname(archiveName));
 
     // Create the ZIP archive with Node for portability
     const archive = new JSZip().folder(appName);
@@ -75,5 +106,4 @@ function platformName(arch) {
 
 // We only maintain the installer and update channel for 32 architecture,
 // having no substantial gains from using 64 bit.
-createWindowsInstaller('ia32');
-createMacArchive();
+createWindowsInstaller('ia32').then(createMacArchive);
