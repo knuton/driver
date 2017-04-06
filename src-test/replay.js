@@ -26,6 +26,10 @@ module.exports = function(recFile, timeout) {
             console.log('DATA - Closed: ' + socket.remoteAddress + ' ' + socket.remotePort);
         });
 
+        socket.on('error', (err) => {
+            console.log('Error: ', err);
+        })
+
     }).listen(PORT, HOST);
     console.log('DATA listening on ' + HOST + ':' + PORT);
 
