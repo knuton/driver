@@ -34,11 +34,15 @@ To start with Electron (as in production) run `npm run electron`.
 
 This will start the driver as an Electron application. Note that no window will be created. The application lives in the menubar.
 
-## Building Releases
+## Building the App
 
 To build Electron executables and installers: `npm run build`
 
 Additional dependencies are required for creating the installers. If you use a Unix system, you will need to [install Mono](http://www.mono-project.com/download/) in order to create and sign installers for Windows.
+
+## Change Log
+
+Update the change log for any functional changes, at the latest before every release. See [keepachangelog.com](http://keepachangelog.com/) for formatting and conventions.
 
 ## SSL
 
@@ -118,7 +122,21 @@ Following these instructions, the Senso should have IP `169.254.1.10`.
 
 The Windows version of the driver is packaged into an installer using [Squirrel](https://github.com/Squirrel/Squirrel.Windows). Drivers installed in this way will auto-update by checking `dist.dividat.ch` for new versions periodically.
 
-To release an update run `npm run release`. Credentials need to be available for the AWS SDK to pick up.
+When building for releasing, all Windows executables have to be signed. The release script will not publish unsigned builds.
+
+### Checklist
+
+- [ ] Check that changelog is up to date
+- [ ] Check that tests are green
+- [ ] Merge into master
+- [ ] Tag release with semver number (e.g. `v0.3.1`)
+- [ ] Push master to GitHub, including `--tags`
+
+### Releasing to `dist.dividat.ch`
+
+- `npm run release`
+
+Credentials need to be available for the AWS SDK to pick up. `CODE_SIGNING_CERT` and optionally `CODE_SIGNING_PW` need to be set for code signing to happen.
 
 The command will trigger a fresh build and start a release script. The release script expects to release from a clean working tree. It will ask for a version number to use for the release and cross-check it with that in `package.json` and the tag of `HEAD`. If all is well, it will upload the release assets to S3.
 
