@@ -1,5 +1,16 @@
 # Change Log
 
+## [UNRELEASED]
+
+### Changed
+
+- Remove filtering logic and reduce driver to a TCP <-> WebSocket bridge
+- Simplify persistentConnection module by making returned connection an EventEmitter
+
+### Removed
+
+- TCP heratbeat in persistentConnection
+
 ## [0.2.2] - 2017-03-04
 
 ### Added
