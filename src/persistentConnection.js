@@ -17,6 +17,7 @@ module.exports = function Connection(host, port, name, log) {
         return connection.name + " (" + connection.host + ":" + connection.port + ") - " + msg;
     }
 
+    // Handle socket events
     function onConnect() {
         connection.connected = true;
         log.info(formatLog("Connected."))
@@ -38,7 +39,6 @@ module.exports = function Connection(host, port, name, log) {
     function onData(data) {
         connection.emit('data', data);
     }
-    // Socket event handlers
     function onTimeout() {
         if (connection.socket) {
             if (connection.socket.connecting) {

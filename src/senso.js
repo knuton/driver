@@ -123,6 +123,7 @@ function factory(sensoAddress, recorder) {
                 switch (command.type) {
                     case "SensoConnect":
                         if (command.connection.type == "IP" && command.connection.address) {
+                            config.set(constants.SENSO_ADDRESS_KEY, command.connection.address);
                             connect(command.connection.address);
                         }
                         break;
@@ -140,7 +141,7 @@ function factory(sensoAddress, recorder) {
         // handle disconnect
         ws.on('disconnect', () => {
             log.info("WS: Disconnected.");
-            
+
             dataConnection.removeListener('data', sendData);
             dataConnection.removeListener('connect', sendSensoConnection);
             dataConnection.removeListener('close', sendSensoConnection);

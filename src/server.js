@@ -58,7 +58,7 @@ function factory(sensoAddress, recorder) {
     /************************************************
      * Debug Route
      ************************************************/
-    app.use('/debug', express.static('src/debug'));
+    // app.use('/debug', express.static('src/debug'));
 
 
     /************************************************
