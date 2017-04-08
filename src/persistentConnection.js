@@ -39,17 +39,17 @@ module.exports = function Connection(host, port, name, log) {
     function onData(data) {
         connection.emit('data', data);
     }
+
     function onTimeout() {
         if (connection.socket) {
             if (connection.socket.connecting) {
                 log.verbose(formatLog("Timeout while connecting."));
                 connection.connect();
+            } else {
+                // log.verbose(formatLog("Sending keepalive."));
+                // var heartBeat = new Buffer(0);
+                // connection.socket.write(heartBeat);
             }
-            // else {
-            // log.verbose(this.formatLog("Sending keepalive."));
-            // var heartBeat = new Buffer(0);
-            // self.socket.write(heartBeat);
-            // }
         }
     }
 
@@ -67,6 +67,7 @@ module.exports = function Connection(host, port, name, log) {
             connection.socket.removeListener('connect', onConnect);
             connection.socket.removeListener('close', onClose);
             connection.socket.removeListener('error', onError);
+            connection.socket.removeListener('timeout', onTimeout);
             connection.socket.destroy();
         }
 
@@ -75,11 +76,12 @@ module.exports = function Connection(host, port, name, log) {
         connection.socket = new net.createConnection(connection.port, connection.host)
             .setKeepAlive(true, 1000)
             .setNoDelay(true)
-            .setTimeout(1000)
+            .setTimeout(5000)
             .on('connect', onConnect)
             .on('close', onClose)
             .on('data', onData)
             .on('error', onError)
+            .on('timeout', onTimeout)
     }
 
     connection.getSocket = () => {

@@ -97,21 +97,27 @@ function factory(sensoAddress, recorder) {
 
         // Create a send function so that it can be cleanly removed from the dataEmitter
         function sendData(data) {
-            ws.emit('Data', data);
+            ws.emit('DataRaw', data);
+        }
+
+        function sendControl(data) {
+            ws.emit('ControlRaw', data);
         }
         dataConnection.on('data', sendData);
-        controlConnection.on('data', sendData);
+        controlConnection.on('data', sendControl);
 
         dataConnection.on('connect', sendSensoConnection);
         dataConnection.on('close', sendSensoConnection);
         controlConnection.on('connect', sendSensoConnection);
         controlConnection.on('close', sendSensoConnection);
 
-        ws.on('Command', (data) => {
+        ws.on('SendControlRaw', (data) => {
             try {
                 var socket = controlConnection.getSocket();
                 if (socket) {
                     socket.write(data);
+                } else {
+                    log.console.warn("Can not send command to Senso, no connection.");
                 }
             } catch (e) {
                 log.error("Error while handling Command:", e);
@@ -146,7 +152,7 @@ function factory(sensoAddress, recorder) {
             dataConnection.removeListener('connect', sendSensoConnection);
             dataConnection.removeListener('close', sendSensoConnection);
 
-            controlConnection.removeListener('data', sendData);
+            controlConnection.removeListener('data', sendControl);
             controlConnection.removeListener('connect', sendSensoConnection);
             controlConnection.removeListener('close', sendSensoConnection);
         });
