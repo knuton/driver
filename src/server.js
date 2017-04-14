@@ -21,10 +21,10 @@ if (process.resourcesPath) {
     resourcesPath = '.';
 }
 
-// Hardware
 
 function factory(sensoAddress, recorder) {
 
+    // Load and connect Senso
     var senso = require('./senso')(sensoAddress, recorder);
 
     // Start the server
@@ -37,39 +37,34 @@ function factory(sensoAddress, recorder) {
         log.info('SERVER: Listening on ' + server.address().port)
     });
 
-    // WebSocket server
-    var WebSocketServer = require('ws').Server;
-    var wss = new WebSocketServer({server: server});
+    // socket.io
+    var io = require('socket.io')(server);
 
     app.use(cors({
         origin: [/dividat\.(com|ch)$/, "http://localhost:8080"]
     }));
 
     /************************************************
- * Index Route
- ************************************************/
+     * Index Route
+     ************************************************/
     app.get('/', function(req, res) {
-        res.json({message: "Dividat Driver", version: pjson.version});
+        res.json({
+            message: "Dividat Driver",
+            version: pjson.version
+        });
     });
 
-    app.use('/senso', senso.router);
 
     /************************************************
- * Handle WebSocket connections
- ************************************************/
-    wss.on('connection', function connection(ws) {
-        var location = url.parse(ws.upgradeReq.url, true);
+     * Debug Route
+     ************************************************/
+    // app.use('/debug', express.static('src/debug'));
 
-        switch (location.pathname) {
-            case "/senso":
-                /************************************************
-             * Senso
-             ************************************************/
-                senso.onWS(ws);
-                break;
-        }
 
-    });
+    /************************************************
+     * Handle WebSocket connections
+     ************************************************/
+    io.on('connection', senso);
 
     return server;
 

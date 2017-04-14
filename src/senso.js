@@ -1,13 +1,9 @@
-const EventEmitter = require('events');
-
-const router = require('express').Router();
+/* Senso bridge
+ * Creates a TCP <-> WebSocket bridge for connecting Play to Senso via a TCP connection.
+ */
+const R = require('ramda');
 
 const Connection = require('./persistentConnection');
-
-const led = require('./senso/led');
-const motor = require('./senso/motor');
-
-const data = require('./senso/data');
 
 const DATA_PORT = 55568;
 const CONTROL_PORT = 55567;
@@ -32,14 +28,6 @@ try {
     }
 }
 
-// // Data logging
-// const fs = require('fs');
-// const LOG = false;
-// if (LOG) {
-//     var rawLog = fs.createWriteStream("log_raw.dat");
-//     var decodedLog = fs.createWriteStream("log_decoded.csv");
-// }
-
 // Pack control Block
 function packControl(block) {
     var protocol_header = new Buffer(8);
@@ -52,115 +40,126 @@ function packControl(block) {
 
 function factory(sensoAddress, recorder) {
 
-    var dataState = data.init()
-    var dataEmitter = new EventEmitter();
+    sensoAddress = sensoAddress || config.get(constants.SENSO_ADDRESS_KEY) || DEFAULT_SENSO_ADDRESS;
 
-    let dataConnection;
-    let controlConnection;
+    var dataConnection = new Connection(sensoAddress, DATA_PORT, "DATA", log)
+    var controlConnection = new Connection(sensoAddress, CONTROL_PORT, "CONTROL", log)
 
-    var sensoAddress = sensoAddress || config.get(constants.SENSO_ADDRESS_KEY) || DEFAULT_SENSO_ADDRESS;
+    // set up recording
+    if (recorder) {
+        dataConnection.on('data', (data) => {
+            recorder.write(raw.toString('base64'));
+            recorder.write('\n');
+        });
+    }
+
+    dataConnection.on('error', (err) => {
+
+    });
+    controlConnection.on('error', (err) => {
+
+    });
 
     connect(sensoAddress);
 
-    function connect() {
-
-        log.info("SENSO: Connecting to " + sensoAddress);
-
-        // Destroy any previous connections
-        if (dataConnection) {
-            dataConnection.destroy();
-        }
-
-        dataConnection = new Connection(sensoAddress, DATA_PORT, (raw) => {
-
-            // Record data
-            if (recorder) {
-                recorder.write(raw.toString('base64'));
-                recorder.write('\n');
-            }
-
-            var dataReturn = data.update(raw, dataState);
-            dataState = dataReturn.state;
-            dataEmitter.emit('data', dataReturn.toSend);
-        }, "DATA");
-
-        if (controlConnection) {
-            controlConnection.destroy();
-        }
-        controlConnection = new Connection(sensoAddress, CONTROL_PORT, (data) => {}, "CONTROL");
+    function connect(address) {
+        log.info("SENSO: Connecting to " + address);
+        dataConnection.connect(address);
+        controlConnection.connect(address);
     }
 
-    function connected() {
-        return (controlConnection.connected && dataConnection.connected);
-    }
-
-    function errorMessage() {
-        return "Control: " + controlConnection.lastErrorMessage + "; Data: " + dataConnection.lastErrorMessage;
-    }
-
-    function sendControl(block) {
-        var socket = controlConnection.getSocket();
-        if (socket) {
-            socket.write(packControl(block));
+    function getConnection() {
+        return {
+            connected: (controlConnection.connected && dataConnection.connected),
+            host: dataConnection.host
         }
     }
 
-    return {
-        onWS: function(ws) {
 
-            log.info("WS: Connected.");
+    function onPlayConnection(ws) {
+        // Handle a new connection to the application (most probably Play, but could be anything else ... like Manager)
+        // argument is a socket.io socket (https://socket.io/docs/server-api/)
 
-            function send(data) {
-                ws.send(JSON.stringify(data), function(err) {
-                    if (err) {
-                        log.warn("WS: Error sending data, " + err);
-                    }
-                });
-            }
+        log.info("Play connected (session:", ws.id, ")");
 
-            dataEmitter.on('data', send);
+        sendSensoConnection();
 
-            // handle disconnect
-            ws.on('close', function close() {
-                log.info("WS: Disconnected.")
-                dataEmitter.removeListener('data', send);
-            });
-
-            // Handle incomming messages
-            ws.on('message', function(data, flags) {
-                var msg = JSON.parse(data);
-                switch (msg.type) {
-                    case "Led":
-                        var s = msg.setting;
-                        var ledBlock = led(s.channel, s.symbol, s.mode, s.color, s.brightness, s.power);
-                        sendControl(ledBlock);
-                        break;
-
-                    case "Motor":
-                        var s = msg.setting;
-                        var motorBlock = motor(s.channel, s.mode, s.impulses, s.impulse_duration);
-                        sendControl(motorBlock);
-                        break;
-
-                    case "Connect":
-                        sensoAddress = msg.address;
-                        config.set(constants.SENSO_ADDRESS_KEY, sensoAddress);
-                        connect();
-                        break;
-
-                    default:
-                        log.warn("CONTROL: Unkown control message type from Play: " + msg.type);
-                        break;
-
+        function sendSensoConnection() {
+            ws.emit('BridgeMessage', {
+                type: "SensoConnection",
+                connected: (controlConnection.connected && dataConnection.connected),
+                connection: {
+                    type: "IP",
+                    address: dataConnection.host
                 }
-            });
+            })
+        }
 
-        },
+        // Create a send function so that it can be cleanly removed from the dataEmitter
+        function sendData(data) {
+            ws.emit('DataRaw', data);
+        }
 
-        router: router.get('/', function(req, res) {
-            res.json({address: sensoAddress, connected: connected(), error: errorMessage()});
+        function sendControl(data) {
+            ws.emit('ControlRaw', data);
+        }
+        dataConnection.on('data', sendData);
+        controlConnection.on('data', sendControl);
+
+        dataConnection.on('connect', sendSensoConnection);
+        dataConnection.on('close', sendSensoConnection);
+        controlConnection.on('connect', sendSensoConnection);
+        controlConnection.on('close', sendSensoConnection);
+
+        ws.on('SendControlRaw', (data) => {
+            try {
+                var socket = controlConnection.getSocket();
+                if (socket) {
+                    socket.write(data);
+                } else {
+                    log.console.warn("Can not send command to Senso, no connection.");
+                }
+            } catch (e) {
+                log.error("Error while handling Command:", e);
+            }
         })
-    };
+
+        ws.on('BridgeCommand', (command) => {
+            try {
+                switch (command.type) {
+                    case "SensoConnect":
+                        if (command.connection.type == "IP" && command.connection.address) {
+                            config.set(constants.SENSO_ADDRESS_KEY, command.connection.address);
+                            connect(command.connection.address);
+                        }
+                        break;
+                    case "GetSensoConnection":
+                        sendSensoConnection();
+                        break;
+                    default:
+                        break;
+                }
+            } catch (e) {
+                console.error("Error while handling BridgeCommand:", e);
+            }
+        });
+
+        // handle disconnect
+        ws.on('disconnect', () => {
+            log.info("WS: Disconnected.");
+
+            dataConnection.removeListener('data', sendData);
+            dataConnection.removeListener('connect', sendSensoConnection);
+            dataConnection.removeListener('close', sendSensoConnection);
+
+            controlConnection.removeListener('data', sendControl);
+            controlConnection.removeListener('connect', sendSensoConnection);
+            controlConnection.removeListener('close', sendSensoConnection);
+        });
+
+    }
+
+    return onPlayConnection;
 
 }
 
