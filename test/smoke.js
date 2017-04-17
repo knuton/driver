@@ -1,22 +1,14 @@
-const WebSocket = require('ws');
+// TODO: use mocha - that will allow more flexible testing and output can be directly used for medtech documentation
+const request = require('request')
 
-const sensoHost = 'localhost.dividat.com:8380';
+const driverUrl = 'https://localhost.dividat.com:8380'
 
-const ws = new WebSocket(
-    `wss://${sensoHost}/senso`,
-    { origin: 'https://play.dividat.ch/' }
-);
-
-ws.on('open', () => {
-    console.log(`Established connection to driver on ${sensoHost}.`);
-    process.exit(0);
-});
-
-ws.on('error', (err) => {
-    console.error(err);
-    process.exit(1);
-});
-
-setTimeout(() => {
-    console.error(`Timed out trying to connect to driver on ${sensoHost}.`); process.exit(1);
-}, 2000);
+request.get({url: driverUrl, timeout: 2000})
+  .on('response', (response) => {
+    console.log(`Established connection to driver on ${driverUrl}.`)
+    process.exit(0)
+  })
+  .on('error', (err) => {
+    console.error(err)
+    process.exit(1)
+  })
