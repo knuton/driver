@@ -9,6 +9,7 @@ const DEFAULT_SENSO_ADDRESS = '169.254.1.10'
 
 const log = require('electron-log')
 
+// TODO: configuration is unnecessary with zeroconf. Remove once all devices have been udated to MDNS enabled firmware
 let config
 const constants = require('./constants')
 try {
@@ -25,6 +26,22 @@ try {
     }
   }
 }
+
+// Set up MDNS client
+const os = require('os')
+const R = require('ramda')
+
+// compute list of interfaces to use for mdns client
+var interfaces = R.filter(R.identity, R.flatten(R.values(R.map(R.map((ipInfo) => {
+  if (ipInfo.internal === false && ipInfo.family === 'IPv4') {
+    return ipInfo.address
+  } else {
+    return false
+  }
+}), os.networkInterfaces()))))
+
+const bonjour = require('bonjour')({interface: interfaces})
+const bonjourOptions = {type: 'sensoControl'}
 
 function factory (sensoAddress, recorder) {
   sensoAddress = sensoAddress || config.get(constants.SENSO_ADDRESS_KEY) || DEFAULT_SENSO_ADDRESS
@@ -47,7 +64,18 @@ function factory (sensoAddress, recorder) {
     // console.error(('Control connection error:, ', err))
   })
 
+  // TODO: remove autoconnect to predefined address (trust that MDNS will work)
+  // connect with predifined default
   connect(sensoAddress)
+
+  //
+  bonjour.findOne(bonjourOptions, (service) => {
+    if (service.addresses[0]) {
+      let address = service.addresses[0]
+      log.info('MDNS: Found Senso at ' + address)
+      connect(address)
+    }
+  })
 
   function connect (address) {
     log.info('SENSO: Connecting to ' + address)
@@ -90,6 +118,19 @@ function factory (sensoAddress, recorder) {
     controlConnection.on('connect', sendSensoConnection)
     controlConnection.on('close', sendSensoConnection)
 
+    // Setup forwarding of mdns discovery up
+    bonjour.find(bonjourOptions, (service) => {
+      if (service.addresses[0]) {
+        ws.emit('BridgeMessage', {
+          type: 'SensoDiscovered',
+          connection: {
+            type: 'IP',
+            address: service.addresses[0]
+          }
+        })
+      }
+    })
+
     ws.on('SendControlRaw', (data) => {
       try {
         var socket = controlConnection.getSocket()
@@ -115,6 +156,7 @@ function factory (sensoAddress, recorder) {
           case 'GetSensoConnection':
             sendSensoConnection()
             break
+
           default:
             break
         }
