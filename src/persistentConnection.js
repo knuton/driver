@@ -1,79 +1,76 @@
-const net = require('net');
-const EventEmitter = require('events');
+const net = require('net')
+const EventEmitter = require('events')
 
-module.exports = function Connection(host, port, name, log) {
+module.exports = function Connection (host, port, name, log) {
+  var connection = new EventEmitter()
 
-    var connection = new EventEmitter();
+  connection.host = host
+  connection.port = port
 
-    connection.host = host;
-    connection.port = port;
-
-    connection.name = name || "";
-    log = log || require('electron-log');
-
+  connection.name = name || ''
+  log = log || require('electron-log')
 
     // Helpers
-    function formatLog(msg) {
-        return connection.name + " (" + connection.host + ":" + connection.port + ") - " + msg;
-    }
+  function formatLog (msg) {
+    return connection.name + ' (' + connection.host + ':' + connection.port + ') - ' + msg
+  }
 
     // Handle socket events
-    function onConnect() {
-        connection.connected = true;
-        log.info(formatLog("Connected."))
-        connection.emit('connect');
-    }
+  function onConnect () {
+    connection.connected = true
+    log.info(formatLog('Connected.'))
+    connection.emit('connect')
+  }
 
-    function onClose() {
-        connection.connected = false;
-        log.verbose(formatLog("Connection closed."));
-        connection.emit('close');
-        setTimeout(connection.connect, 5000);
-    }
+  function onClose () {
+    connection.connected = false
+    log.verbose(formatLog('Connection closed.'))
+    connection.emit('close')
+    setTimeout(connection.connect, 5000)
+  }
 
-    function onError(err) {
-        log.warn(formatLog('Error: ' + err.message));
-        connection.emit('error', err)
-    }
+  function onError (err) {
+    log.warn(formatLog('Error: ' + err.message))
+    connection.emit('error', err)
+  }
 
-    function onData(data) {
-        connection.emit('data', data);
-    }
+  function onData (data) {
+    connection.emit('data', data)
+  }
 
-    function onTimeout() {
-        if (connection.socket) {
-            if (connection.socket.connecting) {
-                log.verbose(formatLog("Timeout while connecting."));
-                connection.connect();
-            } else {
+  function onTimeout () {
+    if (connection.socket) {
+      if (connection.socket.connecting) {
+        log.verbose(formatLog('Timeout while connecting.'))
+        connection.connect()
+      } else {
                 // log.verbose(formatLog("Sending keepalive."));
                 // var heartBeat = new Buffer(0);
                 // connection.socket.write(heartBeat);
-            }
-        }
+      }
     }
-
+  }
 
     // API
-    connection.connected = false;
-    connection.connect = (host, port) => {
-        host = host || connection.host;
-        port = port || connection.port;
+  connection.connected = false
+  connection.connect = (host, port) => {
+    host = host || connection.host
+    port = port || connection.port
 
-        connection.host = host;
-        connection.port = port;
+    connection.host = host
+    connection.port = port
 
-        if (connection.socket) {
-            connection.socket.removeListener('connect', onConnect);
-            connection.socket.removeListener('close', onClose);
-            connection.socket.removeListener('error', onError);
-            connection.socket.removeListener('timeout', onTimeout);
-            connection.socket.destroy();
-        }
+    if (connection.socket) {
+      connection.socket.removeListener('connect', onConnect)
+      connection.socket.removeListener('close', onClose)
+      connection.socket.removeListener('error', onError)
+      connection.socket.removeListener('timeout', onTimeout)
+      connection.socket.destroy()
+    }
 
-        log.verbose(formatLog("Connecting"));
+    log.verbose(formatLog('Connecting'))
 
-        connection.socket = new net.createConnection(connection.port, connection.host)
+    connection.socket = new net.createConnection(connection.port, connection.host)
             .setKeepAlive(true, 1000)
             .setNoDelay(true)
             .setTimeout(5000)
@@ -82,14 +79,13 @@ module.exports = function Connection(host, port, name, log) {
             .on('data', onData)
             .on('error', onError)
             .on('timeout', onTimeout)
-    }
+  }
 
-    connection.getSocket = () => {
-        return connection.socket;
-    }
+  connection.getSocket = () => {
+    return connection.socket
+  }
 
-    log.info(formatLog("New connection."));
+  log.info(formatLog('New connection.'))
 
-
-    return connection;
+  return connection
 }
