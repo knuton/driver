@@ -8,13 +8,9 @@ const path = require('path')
 
 // Run handler for Windows installer options
 if (require('./installation/handle-squirrel-events')()) {
-  // TODO: check if it makes sense to use process.exit() here. `return` causes a standardjs syntax error, as it can only be used in a function
   process.exit()
-  // return
 }
 
-// const Config = require('electron-config')
-// const config = new Config()
 const constants = require('./constants')
 
 const log = require('electron-log')
