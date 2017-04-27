@@ -23,12 +23,14 @@
   },
   "homepage": "https://github.com/dividat/driver#readme",
   "dependencies": {
+    "bonjour": "^3.5.0",
     "cors": "^2.8.1",
     "electron-config": "^0.2.1",
     "electron-log": "^1.2.2",
     "express": "^4.14.0",
     "fantasy-land": "^1.0.1",
-    "ramda": "^0.22.1",
+    "multicast-dns": "git://github.com/bnielsen1965/multicast-dns",
+    "ramda": "^0.23.0",
     "socket.io": "^1.7.3"
   },
   "devDependencies": {
