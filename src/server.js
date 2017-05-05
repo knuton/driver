@@ -21,10 +21,12 @@ if (process.resourcesPath) {
 }
 
 function factory (sensoAddress, recorder) {
+  log.info('Dividat Driver (' + pjson.version + ') starting up...')
+
     // Load and connect Senso
   var senso = require('./senso')(sensoAddress, recorder)
 
-    // Start the server
+  // Start the server
 
   var https = require('https')
   var server = https.createServer({
@@ -33,6 +35,18 @@ function factory (sensoAddress, recorder) {
   }, app)
   server.listen(8380, function () {
     log.info('SERVER: Listening on ' + server.address().port)
+  })
+
+  server.on('error', (error) => {
+    switch (error.code) {
+      case 'EADDRINUSE':
+        log.error('SERVER: Address already in use. Could not start listening.')
+        break
+      default:
+        log.error('SERVER: Error ' + error.code)
+        log.error(error)
+        break
+    }
   })
 
     // socket.io

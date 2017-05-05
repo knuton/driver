@@ -5,7 +5,7 @@ const Connection = require('./persistentConnection')
 
 const DATA_PORT = 55568
 const CONTROL_PORT = 55567
-const DEFAULT_SENSO_ADDRESS = '169.254.1.10'
+const DEFAULT_SENSO_ADDRESS = 'dividat-senso.local'
 
 const log = require('electron-log')
 
@@ -40,7 +40,20 @@ var interfaces = R.filter(R.identity, R.flatten(R.values(R.map(R.map((ipInfo) =>
   }
 }), os.networkInterfaces()))))
 
-const bonjour = require('bonjour')({interface: interfaces})
+const bonjour = require('bonjour')({interface: interfaces, reuseAddr: true})
+
+// Handle case where binding to interface fails. NOTE: this is not standard multicast-dns API!
+bonjour._server.mdns.on('error', (error) => {
+  switch (error.code) {
+    case 'EADDRINUSE':
+      log.warn('MDNS: Could not bind to address ' + error.address)
+      break
+    default:
+      log.warn('MDNS: Error ' + error.code)
+      break
+  }
+})
+
 const bonjourOptions = {type: 'sensoControl'}
 
 function factory (sensoAddress, recorder) {
