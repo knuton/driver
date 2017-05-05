@@ -27,34 +27,7 @@ try {
   }
 }
 
-// Set up MDNS client
-const os = require('os')
-const R = require('ramda')
-
-// compute list of interfaces to use for mdns client
-var interfaces = R.filter(R.identity, R.flatten(R.values(R.map(R.map((ipInfo) => {
-  if (ipInfo.internal === false && ipInfo.family === 'IPv4') {
-    return ipInfo.address
-  } else {
-    return false
-  }
-}), os.networkInterfaces()))))
-
-const bonjour = require('bonjour')({interface: interfaces, reuseAddr: true})
-
-// Handle case where binding to interface fails. NOTE: this is not standard multicast-dns API!
-bonjour._server.mdns.on('error', (error) => {
-  switch (error.code) {
-    case 'EADDRINUSE':
-      log.warn('MDNS: Could not bind to address ' + error.address)
-      break
-    default:
-      log.warn('MDNS: Error ' + error.code)
-      break
-  }
-})
-
-const bonjourOptions = {type: 'sensoControl'}
+const discovery = require('./Senso/discovery')(log)
 
 function factory (sensoAddress, recorder) {
   sensoAddress = sensoAddress || config.get(constants.SENSO_ADDRESS_KEY) || DEFAULT_SENSO_ADDRESS
@@ -81,12 +54,9 @@ function factory (sensoAddress, recorder) {
   connect(sensoAddress)
 
   // Connect to the first Senso discovered
-  bonjour.findOne(bonjourOptions, (service) => {
-    if (service.addresses[0]) {
-      let address = service.addresses[0]
-      log.info('MDNS: Found Senso at ' + address)
-      connect(address)
-    }
+  discovery.once('found', (address) => {
+    log.info('mDNS: Auto-connecting to ' + address)
+    connect(address)
   })
 
   function connect (address) {
@@ -131,16 +101,14 @@ function factory (sensoAddress, recorder) {
     controlConnection.on('close', sendSensoConnection)
 
     // Forward the discovery of (additional) Sensos to Play
-    bonjour.find(bonjourOptions, (service) => {
-      if (service.addresses[0]) {
-        ws.emit('BridgeMessage', {
-          type: 'SensoDiscovered',
-          connection: {
-            type: 'IP',
-            address: service.addresses[0]
-          }
-        })
-      }
+    discovery.on('found', (address) => {
+      ws.emit('BridgeMessage', {
+        type: 'SensoDiscovered',
+        connection: {
+          type: 'IP',
+          address: address
+        }
+      })
     })
 
     ws.on('SendControlRaw', (data) => {
