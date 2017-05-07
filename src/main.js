@@ -22,9 +22,6 @@ let appIcon
 let server
 
 app.on('ready', () => {
-  log.info('Dividat Driver starting.')
-  log.info('Version: ' + pjson.version)
-
     // load server
   server = require('./server')()
 

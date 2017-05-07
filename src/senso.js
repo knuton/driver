@@ -114,6 +114,7 @@ function factory (sensoAddress, recorder) {
     ws.on('SendControlRaw', (data) => {
       try {
         var socket = controlConnection.getSocket()
+        log.debug('CONTROL: ', data)
         if (socket) {
           socket.write(data)
         } else {
