@@ -5,11 +5,11 @@ const Connection = require('./persistentConnection')
 
 const DATA_PORT = 55568
 const CONTROL_PORT = 55567
-const DEFAULT_SENSO_ADDRESS = '169.254.1.10'
+const DEFAULT_SENSO_ADDRESS = 'dividat-senso.local'
 
 const log = require('electron-log')
 
-// TODO: configuration is unnecessary with zeroconf. Remove once all devices have been udated to MDNS enabled firmware
+// TODO: Think about removing configuration on Driver side. If Zeroconf works perfectly no configuration should be needed and otherwise it maybe should be stored on Play side.
 let config
 const constants = require('./constants')
 try {
@@ -27,21 +27,7 @@ try {
   }
 }
 
-// Set up MDNS client
-const os = require('os')
-const R = require('ramda')
-
-// compute list of interfaces to use for mdns client
-var interfaces = R.filter(R.identity, R.flatten(R.values(R.map(R.map((ipInfo) => {
-  if (ipInfo.internal === false && ipInfo.family === 'IPv4') {
-    return ipInfo.address
-  } else {
-    return false
-  }
-}), os.networkInterfaces()))))
-
-const bonjour = require('bonjour')({interface: interfaces})
-const bonjourOptions = {type: 'sensoControl'}
+const discovery = require('./Senso/discovery')(log)
 
 function factory (sensoAddress, recorder) {
   sensoAddress = sensoAddress || config.get(constants.SENSO_ADDRESS_KEY) || DEFAULT_SENSO_ADDRESS
@@ -64,17 +50,13 @@ function factory (sensoAddress, recorder) {
     // console.error(('Control connection error:, ', err))
   })
 
-  // TODO: remove autoconnect to predefined address (trust that MDNS will work)
   // connect with predifined default
   connect(sensoAddress)
 
-  //
-  bonjour.findOne(bonjourOptions, (service) => {
-    if (service.addresses[0]) {
-      let address = service.addresses[0]
-      log.info('MDNS: Found Senso at ' + address)
-      connect(address)
-    }
+  // Connect to the first Senso discovered
+  discovery.once('found', (address) => {
+    log.info('mDNS: Auto-connecting to ' + address)
+    connect(address)
   })
 
   function connect (address) {
@@ -102,7 +84,7 @@ function factory (sensoAddress, recorder) {
       })
     }
 
-        // Create a send function so that it can be cleanly removed from the dataEmitter
+    // Create a send function so that it can be cleanly removed from the dataEmitter
     function sendData (data) {
       ws.emit('DataRaw', data)
     }
@@ -118,22 +100,21 @@ function factory (sensoAddress, recorder) {
     controlConnection.on('connect', sendSensoConnection)
     controlConnection.on('close', sendSensoConnection)
 
-    // Setup forwarding of mdns discovery up
-    bonjour.find(bonjourOptions, (service) => {
-      if (service.addresses[0]) {
-        ws.emit('BridgeMessage', {
-          type: 'SensoDiscovered',
-          connection: {
-            type: 'IP',
-            address: service.addresses[0]
-          }
-        })
-      }
+    // Forward the discovery of (additional) Sensos to Play
+    discovery.on('found', (address) => {
+      ws.emit('BridgeMessage', {
+        type: 'SensoDiscovered',
+        connection: {
+          type: 'IP',
+          address: address
+        }
+      })
     })
 
     ws.on('SendControlRaw', (data) => {
       try {
         var socket = controlConnection.getSocket()
+        log.debug('CONTROL: ', data)
         if (socket) {
           socket.write(data)
         } else {
@@ -165,7 +146,7 @@ function factory (sensoAddress, recorder) {
       }
     })
 
-        // handle disconnect
+    // handle disconnect
     ws.on('disconnect', () => {
       log.info('WS: Disconnected.')
 

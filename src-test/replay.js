@@ -2,9 +2,13 @@ const fs = require('fs')
 const split = require('binary-split')
 const net = require('net')
 
+const discovery = require('../src/Senso/discovery')()
+
+discovery._bonjour.publish({name: 'Senso data replayer', type: 'sensoControl', port: '55567'})
+
 const EventEmitter = require('events')
 
-var HOST = '127.0.0.1'
+var HOST = '0.0.0.0'
 var PORT = 55568
 
 module.exports = function (recFile, timeout) {
