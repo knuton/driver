@@ -6,8 +6,7 @@ const express = require('express')
 const app = express()
 const cors = require('cors')
 
-//
-const pjson = require('../package.json')
+const pkg = require('../package.json')
 
 const log = require('electron-log')
 
@@ -21,7 +20,7 @@ if (process.resourcesPath) {
 }
 
 function factory (sensoAddress, recorder) {
-  log.info('Dividat Driver (' + pjson.version + ') starting up...')
+  log.info('Dividat Driver (' + pkg.version + ') starting up...')
 
     // Load and connect Senso
   var senso = require('./senso')(sensoAddress, recorder)
@@ -62,7 +61,7 @@ function factory (sensoAddress, recorder) {
   app.get('/', function (req, res) {
     res.json({
       message: 'Dividat Driver',
-      version: pjson.version
+      version: pkg.version
     })
   })
 
