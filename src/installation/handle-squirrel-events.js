@@ -103,8 +103,8 @@ function scheduleUpdateCheck () {
   if (process.argv[1] !== '--squirrel-firstrun') {
     checkForUpdates()
   }
-    // Check for updates twice a day
-  setInterval(checkForUpdates, 1000 * 60 * 60 * 12)
+    // Check for updates hourly
+  setInterval(checkForUpdates, 1000 * 60 * 60)
 }
 
 function checkForUpdates () {
