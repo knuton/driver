@@ -71,7 +71,16 @@ function factory (sensoAddress, recorder) {
 
     log.info('Play connected (session:', ws.id, ')')
 
-    sendSensoConnection()
+        // Create a send function so that it can be cleanly removed from the dataEmitter
+    function sendData (data) {
+      ws.emit('DataRaw', data)
+    }
+    dataConnection.on('data', sendData)
+
+    function sendControl (data) {
+      ws.emit('ControlRaw', data)
+    }
+    controlConnection.on('data', sendControl)
 
     function sendSensoConnection () {
       ws.emit('BridgeMessage', {
@@ -83,25 +92,23 @@ function factory (sensoAddress, recorder) {
         }
       })
     }
-
-    // Create a send function so that it can be cleanly removed from the dataEmitter
-    function sendData (data) {
-      ws.emit('DataRaw', data)
-    }
-
-    function sendControl (data) {
-      ws.emit('ControlRaw', data)
-    }
-    dataConnection.on('data', sendData)
-    controlConnection.on('data', sendControl)
-
     dataConnection.on('connect', sendSensoConnection)
     dataConnection.on('close', sendSensoConnection)
     controlConnection.on('connect', sendSensoConnection)
     controlConnection.on('close', sendSensoConnection)
+    sendSensoConnection()
+
+    function onTimeout () {
+      log.verbose('CONTROL: TCP timeout.')
+      ws.emit('BridgeMessage', {
+        type: 'SensoConnectionTimeout'
+      })
+    }
+    controlConnection.on('timeout', onTimeout)
 
     // Forward the discovery of (additional) Sensos to Play
     discovery.on('found', (address) => {
+      log.verbose('CONTROL: TCP timeout.')
       ws.emit('BridgeMessage', {
         type: 'SensoDiscovered',
         connection: {
@@ -157,6 +164,7 @@ function factory (sensoAddress, recorder) {
       controlConnection.removeListener('data', sendControl)
       controlConnection.removeListener('connect', sendSensoConnection)
       controlConnection.removeListener('close', sendSensoConnection)
+      controlConnection.removeListener('timeout', onTimeout)
     })
   }
 

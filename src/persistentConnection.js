@@ -44,9 +44,7 @@ module.exports = function Connection (host, port, name, log) {
         log.verbose(formatLog('Timeout while connecting.'))
         connection.connect()
       } else {
-                // log.verbose(formatLog("Sending keepalive."));
-                // var heartBeat = new Buffer(0);
-                // connection.socket.write(heartBeat);
+        connection.emit('timeout')
       }
     }
   }
