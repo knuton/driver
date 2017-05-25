@@ -44,10 +44,10 @@ function factory (sensoAddress, recorder) {
   }
 
   dataConnection.on('error', (err) => {
-    // console.error('Data connection error: ', err)
+    log.verbose('DATA: connection error', err)
   })
   controlConnection.on('error', (err) => {
-    // console.error(('Control connection error:, ', err))
+    log.verbose('CONTROL: connection error', err)
   })
 
   // connect with predifined default
@@ -118,10 +118,10 @@ function factory (sensoAddress, recorder) {
         if (socket) {
           socket.write(data)
         } else {
-          log.console.warn('Can not send command to Senso, no connection.')
+          log.warn('CONTROL: Can not send command to Senso, no connection.')
         }
       } catch (e) {
-        log.error('Error while handling Command:', e)
+        log.error('CONTROL: Error while handling Command:', e)
       }
     })
 
@@ -142,7 +142,7 @@ function factory (sensoAddress, recorder) {
             break
         }
       } catch (e) {
-        console.error('Error while handling BridgeCommand:', e)
+        log.error('Error while handling BridgeCommand:', e)
       }
     })
 
