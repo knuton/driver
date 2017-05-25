@@ -15,6 +15,8 @@ const constants = require('./constants')
 
 const log = require('electron-log')
 log.transports.file.level = 'info'
+// Set maximum size of logfile to 5MB
+log.transports.file.maxSize = 5 * 1024 * 1024
 
 const pjson = require('../package.json')
 
