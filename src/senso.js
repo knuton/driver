@@ -29,7 +29,7 @@ try {
 
 const discovery = require('./Senso/discovery')(log)
 
-function factory (sensoAddress, recorder) {
+module.exports = (sensoAddress, recorder) => {
   sensoAddress = sensoAddress || config.get(constants.SENSO_ADDRESS_KEY) || DEFAULT_SENSO_ADDRESS
 
   var dataConnection = new Connection(sensoAddress, DATA_PORT, 'DATA', log)
@@ -55,8 +55,12 @@ function factory (sensoAddress, recorder) {
 
   // Connect to the first Senso discovered
   discovery.once('found', (address) => {
-    log.info('mDNS: Auto-connecting to ' + address)
-    connect(address)
+    if (controlConnection.connected || dataConnection.connected) {
+      log.verbose('mDNS: Found Senso at ' + address + '. Not auto-connecting as already connected.')
+    } else {
+      log.info('mDNS: Auto-connecting to ' + address)
+      connect(address)
+    }
   })
 
   function connect (address) {
@@ -170,5 +174,3 @@ function factory (sensoAddress, recorder) {
 
   return onPlayConnection
 }
-
-module.exports = factory
