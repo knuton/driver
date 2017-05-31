@@ -8,7 +8,7 @@
     "start": "nodemon src/server.js",
     "electron": "electron .",
     "build": "rimraf build && mkdir -p build && node bin/build.js && node bin/package.js",
-    "release": "npm run build && node bin/release.js",
+    "release": "node bin/release.js",
     "replay": "nodemon --watch src-test/ src-test/",
     "test": "node test/smoke.js"
   },

@@ -30,20 +30,13 @@ release({
 async function release (options) {
   prompt.start()
 
+  // Basic codebase consistency checks
+
   assert.equal(
         spawnSync('git', ['diff-files', '--quiet']).status,
         0,
         'There are uncommited changes.'
     )
-
-  try {
-    await Promise.all(util.findBinaries(options.distDir).map(binaryPath =>
-            util.promisify(signcode.verify, { path: binaryPath })
-        ))
-  } catch (err) {
-    console.error('Refusing to release unsigned binaries:', err.message)
-    abort()
-  }
 
   const branch = exec('git rev-parse --abbrev-ref HEAD')
   const channel = util.getChannel()
@@ -72,11 +65,29 @@ async function release (options) {
   console.log(`\nThe latest commit on ${branch} is: \n`)
   console.log(indent(exec(`git show --quiet "${commit}"`)) + '\n')
 
+  // Start build
+
+  console.log('Building\n')
+  spawnSync('npm', ['run', 'build'], { stdio: 'inherit' })
+
+  // Binary consistency checks
+
+  try {
+    await Promise.all(util.findBinaries(options.distDir).map(binaryPath =>
+            util.promisify(signcode.verify, { path: binaryPath })
+        ))
+  } catch (err) {
+    console.error('Refusing to release unsigned binaries:', err.message)
+    abort()
+  }
+
   const assets = glob.sync('**/*', { cwd: options.distDir, nodir: true })
   console.log(`The release assets in ${options.distDir} are: \n`)
   console.log(indent(assets.join('\n')) + '\n')
 
   if (!await decide(`Release this on ${channel} as ${tag}?`, false)) abort()
+
+  // Begin release
 
   console.log('\nUploading assets ...')
 
