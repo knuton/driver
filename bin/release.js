@@ -46,7 +46,7 @@ async function release (options) {
   }
 
   const branch = exec('git rev-parse --abbrev-ref HEAD')
-  const channel = channelFromBranch(branch)
+  const channel = util.getChannel()
 
   const version = (await query('tag', {
     description: 'Please enter semver number for this release',
@@ -143,17 +143,6 @@ function exec (cmd) {
 
 function indent (block) {
   return block.replace(/^(?!\s*$)/mg, '    ')
-}
-
-function channelFromBranch (branchName) {
-  switch (branchName) {
-    case 'master':
-      return 'stable'
-        // TODO Introduce a dev channel
-    case 'develop':
-    default:
-      return 'stable'
-  }
 }
 
 function cacheControl (path) {

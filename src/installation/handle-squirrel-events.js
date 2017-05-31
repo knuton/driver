@@ -108,7 +108,7 @@ function scheduleUpdateCheck () {
 }
 
 function checkForUpdates () {
-  electron.autoUpdater.setFeedURL(`https://dist.dividat.ch/releases/driver/stable/win32/ia32`)
+  electron.autoUpdater.setFeedURL(`https://dist.dividat.ch/releases/driver/${constants.RELEASE_CHANNEL}/win32/ia32`)
     // If an update is available, it will be downloaded, but not installed until
     // the application is quit and restarted. We don't bother the user with an
     // "update available" message but trust that the application will be restarted,

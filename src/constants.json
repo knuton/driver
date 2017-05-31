@@ -1,4 +1,5 @@
 {
     "SENSO_ADDRESS_KEY": "senso.address",
-    "PLAY_URL": "https://play.dividat.com/"
+    "PLAY_URL": "https://play.dividat.com/",
+    "RELEASE_CHANNEL": "dev"
 }

@@ -30,7 +30,7 @@ async function createWindowsInstaller (arch) {
     iconUrl: `https://dist.dividat.ch/win32/dividat-icon.ico`,
     setupExe: setupExeName,
     noMsi: true,
-    remoteReleases: `https://dist.dividat.ch/releases/driver/stable/win32/${arch}`
+    remoteReleases: `https://dist.dividat.ch/releases/driver/${util.getChannel()}/win32/${arch}`
   }).then(() => {
         // Set icon on installer
         // Workaround for issue with electron-winstaller

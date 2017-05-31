@@ -140,6 +140,16 @@ Credentials need to be available for the AWS SDK to pick up. `CODE_SIGNING_CERT`
 
 The command will trigger a fresh build and start a release script. The release script expects to release from a clean working tree. It will ask for a version number to use for the release and cross-check it with that in `package.json` and the tag of `HEAD`. If all is well, it will upload the release assets to S3.
 
+#### Release Channels
+
+Release channels allow several lines of the software to coexist, for example in order to allow early internal testing of development versions. A driver built for one channel will only ever update itself to new versions on the same channel.
+
+A release channel can be set via environment variable:
+
+- `RELEASE_CHANNEL=stable npm run release`
+
+When no release channel is set, the channel will default to `internal` on `master` and `dev` on all other branches.
+
 ## Contact
 
 Adarsh Amirtham <adarsh@dividat.com>, Dividat GmbH
