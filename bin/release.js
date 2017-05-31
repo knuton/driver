@@ -55,15 +55,18 @@ async function release (options) {
   const tag = 'v' + semver.clean(version)
 
   assert.equal(
-        version,
-        require('../package').version,
-        'Version must match with package.json.'
+    version,
+    require('../package').version,
+    'Version must match with package.json.'
+  )
+
+  if (channel !== 'dev') {
+    assert.equal(
+      tag,
+      exec('git describe --exact-match HEAD'),
+      'Version must match with Git tag of HEAD.'
     )
-  assert.equal(
-        tag,
-        exec('git describe --exact-match HEAD'),
-        'Version must match with Git tag of HEAD.'
-    )
+  }
 
   const commit = exec('git rev-parse HEAD')
   console.log(`\nThe latest commit on ${branch} is: \n`)
