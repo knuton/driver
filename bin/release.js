@@ -30,11 +30,47 @@ release({
 async function release (options) {
   prompt.start()
 
+  // Basic codebase consistency checks
+
   assert.equal(
         spawnSync('git', ['diff-files', '--quiet']).status,
         0,
         'There are uncommited changes.'
     )
+
+  const branch = exec('git rev-parse --abbrev-ref HEAD')
+  const channel = util.getChannel()
+
+  const version = (await query('tag', {
+    description: 'Please enter semver number for this release',
+    conform: semver.valid
+  }))
+  const tag = 'v' + semver.clean(version)
+
+  assert.equal(
+    version,
+    require('../package').version,
+    'Version must match with package.json.'
+  )
+
+  if (channel !== 'dev') {
+    assert.equal(
+      tag,
+      exec('git describe --exact-match HEAD'),
+      'Version must match with Git tag of HEAD.'
+    )
+  }
+
+  const commit = exec('git rev-parse HEAD')
+  console.log(`\nThe latest commit on ${branch} is: \n`)
+  console.log(indent(exec(`git show --quiet "${commit}"`)) + '\n')
+
+  // Start build
+
+  console.log('Building\n')
+  spawnSync('npm', ['run', 'build'], { stdio: 'inherit' })
+
+  // Binary consistency checks
 
   try {
     await Promise.all(util.findBinaries(options.distDir).map(binaryPath =>
@@ -45,35 +81,13 @@ async function release (options) {
     abort()
   }
 
-  const branch = exec('git rev-parse --abbrev-ref HEAD')
-  const channel = channelFromBranch(branch)
-
-  const version = (await query('tag', {
-    description: 'Please enter semver number for this release',
-    conform: semver.valid
-  }))
-  const tag = 'v' + semver.clean(version)
-
-  assert.equal(
-        version,
-        require('../package').version,
-        'Version must match with package.json.'
-    )
-  assert.equal(
-        tag,
-        exec('git describe --exact-match HEAD'),
-        'Version must match with Git tag of HEAD.'
-    )
-
-  const commit = exec('git rev-parse HEAD')
-  console.log(`\nThe latest commit on ${branch} is: \n`)
-  console.log(indent(exec(`git show --quiet "${commit}"`)) + '\n')
-
   const assets = glob.sync('**/*', { cwd: options.distDir, nodir: true })
   console.log(`The release assets in ${options.distDir} are: \n`)
   console.log(indent(assets.join('\n')) + '\n')
 
   if (!await decide(`Release this on ${channel} as ${tag}?`, false)) abort()
+
+  // Begin release
 
   console.log('\nUploading assets ...')
 
@@ -143,17 +157,6 @@ function exec (cmd) {
 
 function indent (block) {
   return block.replace(/^(?!\s*$)/mg, '    ')
-}
-
-function channelFromBranch (branchName) {
-  switch (branchName) {
-    case 'master':
-      return 'stable'
-        // TODO Introduce a dev channel
-    case 'develop':
-    default:
-      return 'stable'
-  }
 }
 
 function cacheControl (path) {
