@@ -1,167 +1,176 @@
-const EventEmitter = require('events');
+/* Senso bridge
+ * Creates a TCP <-> WebSocket bridge for connecting Play to Senso via a TCP connection.
+ */
+const Connection = require('./persistentConnection')
 
-const router = require('express').Router();
+const DATA_PORT = 55568
+const CONTROL_PORT = 55567
+const DEFAULT_SENSO_ADDRESS = 'dividat-senso.local'
 
-const Connection = require('./persistentConnection');
+const log = require('electron-log')
 
-const led = require('./senso/led');
-const motor = require('./senso/motor');
-
-const data = require('./senso/data');
-
-const DATA_PORT = 55568;
-const CONTROL_PORT = 55567;
-const DEFAULT_SENSO_ADDRESS = '169.254.1.10';
-
-const log = require('electron-log');
-
-let config;
-const constants = require('./constants');
+// TODO: Think about removing configuration on Driver side. If Zeroconf works perfectly no configuration should be needed and otherwise it maybe should be stored on Play side.
+let config
+const constants = require('./constants')
 try {
-    const Config = require('electron-config');
-    config = new Config();
+  const Config = require('electron-config')
+  config = new Config()
 } catch (err) {
-    log.warn("Could not load config file.");
-    config = {
-        get: function(key) {
-            return;
-        },
-        set: function(key, value) {
-            return;
-        }
+  log.warn('Could not load config file.')
+  config = {
+    get: function (key) {
+      return
+    },
+    set: function (key, value) {
+      return
     }
+  }
 }
 
-// // Data logging
-// const fs = require('fs');
-// const LOG = false;
-// if (LOG) {
-//     var rawLog = fs.createWriteStream("log_raw.dat");
-//     var decodedLog = fs.createWriteStream("log_decoded.csv");
-// }
+const discovery = require('./Senso/discovery')(log)
 
-// Pack control Block
-function packControl(block) {
-    var protocol_header = new Buffer(8);
-    protocol_header.fill(0);
+module.exports = (sensoAddress, recorder) => {
+  sensoAddress = sensoAddress || config.get(constants.SENSO_ADDRESS_KEY) || DEFAULT_SENSO_ADDRESS
 
-    return Buffer.concat([
-        protocol_header, block
-    ], 8 + block.length)
-}
+  var dataConnection = new Connection(sensoAddress, DATA_PORT, 'DATA', log)
+  var controlConnection = new Connection(sensoAddress, CONTROL_PORT, 'CONTROL', log)
 
-function factory(sensoAddress, recorder) {
+    // set up recording
+  if (recorder) {
+    dataConnection.on('data', (data) => {
+      recorder.write(data.toString('base64'))
+      recorder.write('\n')
+    })
+  }
 
-    var dataState = data.init()
-    var dataEmitter = new EventEmitter();
+  dataConnection.on('error', (err) => {
+    log.verbose('DATA: connection error', err)
+  })
+  controlConnection.on('error', (err) => {
+    log.verbose('CONTROL: connection error', err)
+  })
 
-    let dataConnection;
-    let controlConnection;
+  // connect with predifined default
+  connect(sensoAddress)
 
-    var sensoAddress = sensoAddress || config.get(constants.SENSO_ADDRESS_KEY) || DEFAULT_SENSO_ADDRESS;
+  // Connect to the first Senso discovered
+  discovery.once('found', (address) => {
+    if (controlConnection.connected || dataConnection.connected) {
+      log.verbose('mDNS: Found Senso at ' + address + '. Not auto-connecting as already connected.')
+    } else {
+      log.info('mDNS: Auto-connecting to ' + address)
+      connect(address)
+    }
+  })
 
-    connect(sensoAddress);
+  function connect (address) {
+    log.info('SENSO: Connecting to ' + address)
+    dataConnection.connect(address)
+    controlConnection.connect(address)
+  }
 
-    function connect() {
+  function onPlayConnection (ws) {
+        // Handle a new connection to the application (most probably Play, but could be anything else ... like Manager)
+        // argument is a socket.io socket (https://socket.io/docs/server-api/)
 
-        log.info("SENSO: Connecting to " + sensoAddress);
+    log.info('Play connected (session:', ws.id, ')')
 
-        // Destroy any previous connections
-        if (dataConnection) {
-            dataConnection.destroy();
+        // Create a send function so that it can be cleanly removed from the dataEmitter
+    function sendData (data) {
+      ws.emit('DataRaw', data)
+    }
+    dataConnection.on('data', sendData)
+
+    function sendControl (data) {
+      ws.emit('ControlRaw', data)
+    }
+    controlConnection.on('data', sendControl)
+
+    function sendSensoConnection () {
+      ws.emit('BridgeMessage', {
+        type: 'SensoConnection',
+        connected: (controlConnection.connected && dataConnection.connected),
+        connection: {
+          type: 'IP',
+          address: dataConnection.host
         }
+      })
+    }
+    dataConnection.on('connect', sendSensoConnection)
+    dataConnection.on('close', sendSensoConnection)
+    controlConnection.on('connect', sendSensoConnection)
+    controlConnection.on('close', sendSensoConnection)
+    sendSensoConnection()
 
-        dataConnection = new Connection(sensoAddress, DATA_PORT, (raw) => {
+    function onTimeout () {
+      log.verbose('CONTROL: TCP timeout.')
+      ws.emit('BridgeMessage', {
+        type: 'SensoConnectionTimeout'
+      })
+    }
+    controlConnection.on('timeout', onTimeout)
 
-            // Record data
-            if (recorder) {
-                recorder.write(raw.toString('base64'));
-                recorder.write('\n');
-            }
-
-            var dataReturn = data.update(raw, dataState);
-            dataState = dataReturn.state;
-            dataEmitter.emit('data', dataReturn.toSend);
-        }, "DATA");
-
-        if (controlConnection) {
-            controlConnection.destroy();
+    // Forward the discovery of (additional) Sensos to Play
+    discovery.on('found', (address) => {
+      log.verbose('CONTROL: TCP timeout.')
+      ws.emit('BridgeMessage', {
+        type: 'SensoDiscovered',
+        connection: {
+          type: 'IP',
+          address: address
         }
-        controlConnection = new Connection(sensoAddress, CONTROL_PORT, (data) => {}, "CONTROL");
-    }
+      })
+    })
 
-    function connected() {
-        return (controlConnection.connected && dataConnection.connected);
-    }
-
-    function errorMessage() {
-        return "Control: " + controlConnection.lastErrorMessage + "; Data: " + dataConnection.lastErrorMessage;
-    }
-
-    function sendControl(block) {
-        var socket = controlConnection.getSocket();
+    ws.on('SendControlRaw', (data) => {
+      try {
+        var socket = controlConnection.getSocket()
+        log.debug('CONTROL: ', data)
         if (socket) {
-            socket.write(packControl(block));
+          socket.write(data)
+        } else {
+          log.warn('CONTROL: Can not send command to Senso, no connection.')
         }
-    }
+      } catch (e) {
+        log.error('CONTROL: Error while handling Command:', e)
+      }
+    })
 
-    return {
-        onWS: function(ws) {
-
-            log.info("WS: Connected.");
-
-            function send(data) {
-                ws.send(JSON.stringify(data), function(err) {
-                    if (err) {
-                        log.warn("WS: Error sending data, " + err);
-                    }
-                });
+    ws.on('BridgeCommand', (command) => {
+      try {
+        switch (command.type) {
+          case 'SensoConnect':
+            if (command.connection.type === 'IP' && command.connection.address) {
+              config.set(constants.SENSO_ADDRESS_KEY, command.connection.address)
+              connect(command.connection.address)
             }
+            break
+          case 'GetSensoConnection':
+            sendSensoConnection()
+            break
 
-            dataEmitter.on('data', send);
+          default:
+            break
+        }
+      } catch (e) {
+        log.error('Error while handling BridgeCommand:', e)
+      }
+    })
 
-            // handle disconnect
-            ws.on('close', function close() {
-                log.info("WS: Disconnected.")
-                dataEmitter.removeListener('data', send);
-            });
+    // handle disconnect
+    ws.on('disconnect', () => {
+      log.info('WS: Disconnected.')
 
-            // Handle incomming messages
-            ws.on('message', function(data, flags) {
-                var msg = JSON.parse(data);
-                switch (msg.type) {
-                    case "Led":
-                        var s = msg.setting;
-                        var ledBlock = led(s.channel, s.symbol, s.mode, s.color, s.brightness, s.power);
-                        sendControl(ledBlock);
-                        break;
+      dataConnection.removeListener('data', sendData)
+      dataConnection.removeListener('connect', sendSensoConnection)
+      dataConnection.removeListener('close', sendSensoConnection)
 
-                    case "Motor":
-                        var s = msg.setting;
-                        var motorBlock = motor(s.channel, s.mode, s.impulses, s.impulse_duration);
-                        sendControl(motorBlock);
-                        break;
+      controlConnection.removeListener('data', sendControl)
+      controlConnection.removeListener('connect', sendSensoConnection)
+      controlConnection.removeListener('close', sendSensoConnection)
+      controlConnection.removeListener('timeout', onTimeout)
+    })
+  }
 
-                    case "Connect":
-                        sensoAddress = msg.address;
-                        config.set(constants.SENSO_ADDRESS_KEY, sensoAddress);
-                        connect();
-                        break;
-
-                    default:
-                        log.warn("CONTROL: Unkown control message type from Play: " + msg.type);
-                        break;
-
-                }
-            });
-
-        },
-
-        router: router.get('/', function(req, res) {
-            res.json({address: sensoAddress, connected: connected(), error: errorMessage()});
-        })
-    };
-
+  return onPlayConnection
 }
-
-module.exports = factory;

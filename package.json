@@ -1,15 +1,16 @@
 {
   "name": "dividat-driver",
   "productName": "Dividat Driver",
-  "version": "0.2.2",
+  "version": "0.3.0",
   "description": "Dividat drivers and hardware test suites",
   "main": "src/main.js",
   "scripts": {
     "start": "nodemon src/server.js",
     "electron": "electron .",
-    "build": "rimraf build; mkdir -p build; bin/build; bin/package",
-    "release": "npm run build && bin/release",
-    "replay": "nodemon --watch src-test/ src-test/"
+    "build": "rimraf build && mkdir -p build && node bin/build.js && node bin/package.js",
+    "release": "npm run build && node bin/release.js",
+    "replay": "nodemon --watch src-test/ src-test/",
+    "test": "node test/smoke.js"
   },
   "repository": {
     "type": "git",
@@ -22,14 +23,15 @@
   },
   "homepage": "https://github.com/dividat/driver#readme",
   "dependencies": {
+    "bonjour": "^3.5.0",
     "cors": "^2.8.1",
     "electron-config": "^0.2.1",
     "electron-log": "^1.2.2",
     "express": "^4.14.0",
     "fantasy-land": "^1.0.1",
-    "ramda": "^0.22.1",
-    "sylvester": "0.0.21",
-    "ws": "^1.1.1"
+    "multicast-dns": "git://github.com/bnielsen1965/multicast-dns",
+    "ramda": "^0.23.0",
+    "socket.io": "^1.7.3"
   },
   "devDependencies": {
     "aws-sdk": "^2.22.0",
@@ -38,12 +40,16 @@
     "electron-packager": "^8.4.0",
     "electron-winstaller": "^2.5.2",
     "glob": "^7.1.1",
+    "jszip": "^3.1.3",
     "mime-types": "^2.1.14",
     "minimist": "^1.2.0",
-    "nodemon": "^1.10.2",
+    "mkdirp": "^0.5.1",
+    "nodemon": "^1.11.0",
     "prompt": "^1.0.0",
     "rcedit": "^0.7.0",
+    "request": "^2.81.0",
     "rimraf": "^2.5.4",
-    "semver": "^5.3.0"
+    "semver": "^5.3.0",
+    "signcode": "^1.0.0"
   }
 }

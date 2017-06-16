@@ -2,95 +2,98 @@
  * This is the express server that maps hardware
  * to WebSocket
  ************************************************/
-const express = require('express');
-const app = express();
-const url = require('url');
-const cors = require('cors');
+const express = require('express')
+const app = express()
+const cors = require('cors')
 
-//
-const pjson = require('../package.json');
+const pkg = require('../package.json')
 
-const log = require('electron-log');
+const log = require('electron-log')
 
-const fs = require('fs');
+const fs = require('fs')
 
-let resourcesPath;
+let resourcesPath
 if (process.resourcesPath) {
-    resourcesPath = process.resourcesPath + "/app";
+  resourcesPath = process.resourcesPath + '/app'
 } else {
-    resourcesPath = '.';
+  resourcesPath = '.'
 }
 
-// Hardware
+function factory (sensoAddress, recorder) {
+  log.info('Dividat Driver (' + pkg.version + ') starting up...')
 
-function factory(sensoAddress, recorder) {
+    // Load and connect Senso
+  var senso = require('./senso')(sensoAddress, recorder)
 
-    var senso = require('./senso')(sensoAddress, recorder);
+  // Start the server
 
-    // Start the server
-    var https = require('https');
-    var server = https.createServer({
-        key: fs.readFileSync(resourcesPath + "/ssl/key.pem"),
-        cert: fs.readFileSync(resourcesPath + "/ssl/cert.pem")
-    }, app);
-    server.listen(8380, function() {
-        log.info('SERVER: Listening on ' + server.address().port)
-    });
+  var https = require('https')
+  var server = https.createServer({
+    key: fs.readFileSync(resourcesPath + '/ssl/key.pem'),
+    cert: fs.readFileSync(resourcesPath + '/ssl/cert.pem')
+  }, app)
+  server.listen(8380, function () {
+    log.info('SERVER: Listening on ' + server.address().port)
+  })
 
-    // WebSocket server
-    var WebSocketServer = require('ws').Server;
-    var wss = new WebSocketServer({server: server});
+  server.on('error', (error) => {
+    switch (error.code) {
+      case 'EADDRINUSE':
+        log.error('SERVER: Address already in use. Could not start listening.')
+        break
+      default:
+        log.error('SERVER: Error ' + error.code)
+        log.error(error)
+        break
+    }
+  })
 
-    app.use(cors({
-        origin: [/dividat\.(com|ch)$/, "http://localhost:8080"]
-    }));
+    // socket.io
+  var io = require('socket.io')(server)
+
+  app.use(cors({
+    origin: [/dividat\.(com|ch)$/, 'http://localhost:8080']
+  }))
 
     /************************************************
- * Index Route
- ************************************************/
-    app.get('/', function(req, res) {
-        res.json({message: "Dividat Driver", version: pjson.version});
-    });
-
-    app.use('/senso', senso.router);
+     * Index Route
+     ************************************************/
+  app.get('/', function (req, res) {
+    res.json({
+      message: 'Dividat Driver',
+      version: pkg.version
+    })
+  })
 
     /************************************************
- * Handle WebSocket connections
- ************************************************/
-    wss.on('connection', function connection(ws) {
-        var location = url.parse(ws.upgradeReq.url, true);
+     * Debug Route
+     ************************************************/
+    // app.use('/debug', express.static('src/debug'));
 
-        switch (location.pathname) {
-            case "/senso":
-                /************************************************
-             * Senso
-             ************************************************/
-                senso.onWS(ws);
-                break;
-        }
+    /************************************************
+     * Handle WebSocket connections
+     ************************************************/
+  io.on('connection', senso)
 
-    });
-
-    return server;
-
+  return server
 }
 
-module.exports = factory;
+module.exports = factory
 
 if (require.main === module) {
-    var argv = require('minimist')(process.argv.slice(2));
+  var argv = require('minimist')(process.argv.slice(2))
 
-    let recorder;
-    if ('rec' in argv) {
-        log.info("Recording data to: " + argv['rec']);
-        const fs = require('fs');
-        recorder = fs.createWriteStream(argv['rec']);
-    }
+  let recorder
+  if ('rec' in argv) {
+    log.info('Recording data to: ' + argv['rec'])
+    const fs = require('fs')
+    recorder = fs.createWriteStream(argv['rec'])
+  }
 
-    let sensoAddress;
-    if ('address' in argv) {
-        sensoAddress = argv['address'];
-    }
+  let sensoAddress
+  if ('address' in argv) {
+    sensoAddress = argv['address']
+  }
 
-    factory(sensoAddress, recorder);
+  factory(sensoAddress, recorder)
 }
