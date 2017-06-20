@@ -16,7 +16,8 @@ const distDir = 'build/dist'
 async function createWindowsInstaller (arch) {
   const outputPath = `${distDir}/win32/${arch}`
   const appPath = `build/${pkg.productName}-win32-${arch}`
-  const setupExeName = `Install ${pkg.productName} v${pkg.version}.exe`
+  const channel = util.getChannel()
+  const setupExeName = `Install ${pkg.productName} v${pkg.version} (${channel}).exe`
 
   await signBinaries(appPath)
 
@@ -30,7 +31,7 @@ async function createWindowsInstaller (arch) {
     iconUrl: `https://dist.dividat.ch/win32/dividat-icon.ico`,
     setupExe: setupExeName,
     noMsi: true,
-    remoteReleases: `https://dist.dividat.ch/releases/driver/${util.getChannel()}/win32/${arch}`
+    remoteReleases: `https://dist.dividat.ch/releases/driver/${channel}/win32/${arch}`
   }).then(() => {
         // Set icon on installer
         // Workaround for issue with electron-winstaller
