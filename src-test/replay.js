@@ -2,9 +2,9 @@ const fs = require('fs')
 const split = require('binary-split')
 const net = require('net')
 
-const discovery = require('../src/Senso/discovery')()
+const bonjour = require('bonjour')()
 
-discovery._bonjour.publish({name: 'Senso data replayer', type: 'sensoControl', port: '55567'})
+bonjour.publish({name: 'Senso data replayer', type: 'sensoControl', port: '55567'})
 
 const EventEmitter = require('events')
 
