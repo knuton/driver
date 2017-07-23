@@ -1,5 +1,17 @@
 # Change Log
 
+## [0.3.3] - 2017-07-23
+
+### Changed
+
+- Use new SSL certificate for localhost.dividat.com alias
+
+## [0.3.2] - 2017-06-27
+
+### Added
+
+- Update mDNS listener when new network interfaces appear
+
 ## [0.3.1] - 2017-06-20
 
 ### Added
