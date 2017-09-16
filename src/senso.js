@@ -54,14 +54,14 @@ module.exports = (sensoAddress, recorder) => {
   connect(sensoAddress)
 
   // Connect to the first Senso discovered
-  discovery.once('found', (address) => {
-    if (controlConnection.connected || dataConnection.connected) {
-      log.verbose('mDNS: Found Senso at ' + address + '. Not auto-connecting as already connected.')
-    } else {
-      log.info('mDNS: Auto-connecting to ' + address)
-      connect(address)
-    }
-  })
+  // discovery.once('found', (address) => {
+  //   if (controlConnection.connected || dataConnection.connected) {
+  //     log.verbose('mDNS: Found Senso at ' + address + '. Not auto-connecting as already connected.')
+  //   } else {
+  //     log.info('mDNS: Auto-connecting to ' + address)
+  //     connect(address)
+  //   }
+  // })
 
   function connect (address) {
     log.info('SENSO: Connecting to ' + address)
@@ -112,7 +112,7 @@ module.exports = (sensoAddress, recorder) => {
 
     // Forward the discovery of (additional) Sensos to Play
     discovery.on('found', (address) => {
-      log.verbose('CONTROL: TCP timeout.')
+      log.verbose('mDNS: Found Senso at ' + address)
       ws.emit('BridgeMessage', {
         type: 'SensoDiscovered',
         connection: {
