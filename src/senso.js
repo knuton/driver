@@ -53,16 +53,6 @@ module.exports = (sensoAddress, recorder) => {
   // connect with predifined default
   connect(sensoAddress)
 
-  // Connect to the first Senso discovered
-  // discovery.once('found', (address) => {
-  //   if (controlConnection.connected || dataConnection.connected) {
-  //     log.verbose('mDNS: Found Senso at ' + address + '. Not auto-connecting as already connected.')
-  //   } else {
-  //     log.info('mDNS: Auto-connecting to ' + address)
-  //     connect(address)
-  //   }
-  // })
-
   function connect (address) {
     log.info('SENSO: Connecting to ' + address)
     dataConnection.connect(address)
