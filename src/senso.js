@@ -53,6 +53,11 @@ module.exports = (sensoAddress, recorder) => {
   // connect with predefined default
   connect(sensoAddress)
 
+  // On Linux installations, connect to any Senso discovered
+  if (process.platform === 'linux') {
+    discovery.on('found', connect)
+  }
+
   function connect (address) {
     log.info('SENSO: Connecting to ' + address)
     dataConnection.connect(address)
