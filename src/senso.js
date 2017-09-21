@@ -50,7 +50,7 @@ module.exports = (sensoAddress, recorder) => {
     log.verbose('CONTROL: connection error', err)
   })
 
-  // connect with predifined default
+  // connect with predefined default
   connect(sensoAddress)
 
   function connect (address) {
