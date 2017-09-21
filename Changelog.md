@@ -1,5 +1,12 @@
 # Change Log
 
+## [0.3.6] - 2017-09-21
+
+### Changed
+
+- New SSL certs, obfuscated for longevity
+- Linux only: Autoconnect to mDNS-discovered addresses
+
 ## [0.3.5] - 2017-09-17
 
 ### Changed
