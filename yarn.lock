@@ -1749,9 +1749,9 @@ multicast-dns-service-types@^1.1.0:
   version "1.1.0"
   resolved "https://registry.yarnpkg.com/multicast-dns-service-types/-/multicast-dns-service-types-1.1.0.tgz#899f11d9686e5e05cb91b35d5f0e63b773cfc901"
 
-multicast-dns@^6.0.1, "multicast-dns@git://github.com/bnielsen1965/multicast-dns":
+multicast-dns@^6.0.1, "multicast-dns@git+https://github.com/bnielsen1965/multicast-dns":
   version "6.1.0"
-  resolved "git://github.com/bnielsen1965/multicast-dns#ad5fb714c8f2ef893229f0a6767dc7227dfc314f"
+  resolved "git+https://github.com/bnielsen1965/multicast-dns#ad5fb714c8f2ef893229f0a6767dc7227dfc314f"
   dependencies:
     dns-packet "^1.0.1"
     thunky "^0.1.0"
