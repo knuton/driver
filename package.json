@@ -37,6 +37,7 @@
   "devDependencies": {
     "aws-sdk": "^2.22.0",
     "binary-split": "^1.0.3",
+    "electron": "^1.4.12",
     "electron-packager": "^8.7.0",
     "electron-winstaller": "^2.5.2",
     "glob": "^7.1.1",
@@ -53,8 +54,5 @@
     "semver": "^5.3.0",
     "signcode": "^1.0.0",
     "tmp": "^0.0.33"
-  },
-  "optionalDependencies": {
-    "electron": "^1.7.8"
   }
 }
