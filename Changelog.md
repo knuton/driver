@@ -1,5 +1,11 @@
 # Change Log
 
+## [0.3.7] - 2017-09-25
+
+### Changed
+
+- Make Electron an optional dependency for 'headless' mode
+
 ## [0.3.6] - 2017-09-21
 
 ### Changed
