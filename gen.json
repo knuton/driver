@@ -1,0 +1,11 @@
+{ "at": 100, "duration": 2000, "values": { "up-a": 5000, "up-b": 4000, "up-c": 5000, "up-d": 4000 } }
+
+{ "at": 3000, "duration": 4000, "values": { "up-a": 2500, "up-c": 3500, "left-b": 2500, "left-d": 3500 } }
+{ "at": 5000, "duration": 4000, "values": { "up-a": 4000, "up-b": 5000, "up-c": 4000, "up-d": 5000 } }
+
+{ "at": 10000, "duration": 4000, "values": { "center-a": 5000, "center-b": 5000, "center-c": 5000, "center-d": 5000 } }
+
+{ "at": 12000, "duration": 4000, "values": { "down-a": 5000, "down-b": 5000, "down-c": 2000, "down-d": 3000 } }
+
+{ "at": 16000, "duration": 3000, "values": { "down-b": 2500, "down-d": 3500, "left-a": 2500, "left-c": 3500 } }
+{ "at": 17000, "duration": 3000, "values": { "up-a": 2500, "up-c": 3500, "left-b": 2500, "left-d": 3500 } }
