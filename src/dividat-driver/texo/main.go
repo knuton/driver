@@ -7,10 +7,11 @@ import (
 	"fmt"
 	"bufio"
 	"io"
-	"os"
+	"time"
 
 	"github.com/cskr/pubsub"
 	"github.com/sirupsen/logrus"
+	"github.com/tarm/serial"
 )
 
 // Handle for managing SensingTex connection
@@ -97,13 +98,23 @@ const (
 )
 
 func connectSerial(ctx context.Context, baseLogger *logrus.Entry, address string, onReceive func([]byte)) {
-	serialHandle, err := os.OpenFile("/dev/ttyACM0", os.O_RDWR, 0644)
+	config := &serial.Config{
+		Name: "/dev/ttyAMA0",
+		Baud: 115200,
+		ReadTimeout: 100 * time.Millisecond,
+		Size: 8,
+		Parity: serial.ParityNone,
+		StopBits: serial.Stop1,
+	}
+	fmt.Println(config)
+
+	serialHandle, err := serial.OpenPort(config)
         if err != nil {
                 // TODO
                 panic(err)
         }
 
-	_, err = serialHandle.Write([]byte{'S'})
+	_, err = serialHandle.Write([]byte{'S', '\n'})
 	if err != nil {
 		panic(err)
 	}
