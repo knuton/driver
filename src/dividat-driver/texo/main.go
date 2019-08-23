@@ -105,17 +105,18 @@ func connectSerial(ctx context.Context, baseLogger *logrus.Entry, serialName str
 		Parity: serial.ParityNone,
 		StopBits: serial.Stop1,
 	}
-	fmt.Println(config)
 
 	serialHandle, err := serial.OpenPort(config)
         if err != nil {
-                // TODO
-                panic(err)
+                baseLogger.WithField("config", config).WithField("error", err).Info("Failed to open connection to serial port.")
+		return
+		// TODO [knuton] Retry periodically
         }
 
 	_, err = serialHandle.Write([]byte{'S', '\n'})
 	if err != nil {
-		panic(err)
+                baseLogger.WithField("error", err).Info("Failed to write start message to serial port.")
+		return
 	}
 
         reader := bufio.NewReader(serialHandle)
