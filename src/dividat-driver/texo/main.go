@@ -18,8 +18,6 @@ import (
 type Handle struct {
 	broker *pubsub.PubSub
 
-	Address *string
-
 	ctx context.Context
 
 	cancelCurrentConnection context.CancelFunc
@@ -50,8 +48,8 @@ func New(ctx context.Context, log *logrus.Entry) *Handle {
 	return &handle
 }
 
-// Connect to a Senso, will create TCP connections to control and data ports
-func (handle *Handle) Connect(address string) {
+// Connect to device via serial at given name
+func (handle *Handle) Connect() {
 
 	// Only allow one connection change at a time
 	handle.connectionChangeMutex.Lock()
@@ -60,19 +58,19 @@ func (handle *Handle) Connect(address string) {
 	// disconnect current connection first
 	handle.Disconnect()
 
-	// set address in handle
-	handle.Address = &address
-
 	// Create a child context for a new connection. This allows an individual connection (attempt) to be cancelled without restarting the whole handler
 	ctx, cancel := context.WithCancel(handle.ctx)
 
-	handle.log.WithField("address", address).Info("Attempting to connect with serial port.")
+	// TODO [knuton] Probably want to discover the name of the serial port
+	serialName := "/dev/ttyAMA0"
+
+	handle.log.WithField("address", serialName).Info("Attempting to connect with serial port.")
 
 	onReceive := func(data []byte) {
 		handle.broker.TryPub(data, "rx")
 	}
 
-	go connectSerial(ctx, handle.log, address, onReceive)
+	go connectSerial(ctx, handle.log, serialName, onReceive)
 
 	handle.cancelCurrentConnection = cancel
 }
@@ -82,7 +80,6 @@ func (handle *Handle) Disconnect() {
 	if handle.cancelCurrentConnection != nil {
 		handle.log.Info("Disconnecting from serial port.")
 		handle.cancelCurrentConnection()
-		handle.Address = nil
 	}
 }
 
@@ -99,9 +96,9 @@ const (
 	UnexpectedByte
 )
 
-func connectSerial(ctx context.Context, baseLogger *logrus.Entry, address string, onReceive func([]byte)) {
+func connectSerial(ctx context.Context, baseLogger *logrus.Entry, serialName string, onReceive func([]byte)) {
 	config := &serial.Config{
-		Name: "/dev/ttyACM0",
+		Name: serialName,
 		Baud: 115200,
 		ReadTimeout: 100 * time.Millisecond,
 		Size: 8,
