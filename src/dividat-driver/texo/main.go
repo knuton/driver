@@ -86,13 +86,17 @@ func (handle *Handle) Disconnect() {
 type ReaderState int
 
 const (
+	// Init
 	WaitingForFirstHeader ReaderState = iota
+	// Header
 	HeaderStarted
 	ExpectingHeaderEnd
+	// Data row
 	RowStarted
 	WaitingForRowIndex
 	ReadingRowData
 	ReachedRowEnd
+	// Error state
 	UnexpectedByte
 )
 
@@ -140,6 +144,11 @@ func connectSerial(ctx context.Context, baseLogger *logrus.Entry, serialName str
 			fmt.Printf("%x\n", buff)
 			onReceive(buff)
                         buff = []byte{}
+		case state == UnexpectedByte && input == 0x48:
+			// Recover from error state when a new header is seen
+			buff = []byte{}
+			bytesLeftInRow = 0
+			state = HeaderStarted
 		case state == HeaderStarted && input == 0x00:
 			state = ExpectingHeaderEnd
 		case state == ExpectingHeaderEnd && input == 0x0A:
@@ -163,6 +172,8 @@ func connectSerial(ctx context.Context, baseLogger *logrus.Entry, serialName str
 			buff = append(buff, input)
 		case state == ReadingRowData:
 			buff = append(buff, input)
+		default:
+			state = UnexpectedByte
 		}
         }
 }
