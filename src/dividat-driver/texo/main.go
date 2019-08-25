@@ -62,7 +62,7 @@ func (handle *Handle) Connect() {
 	ctx, cancel := context.WithCancel(handle.ctx)
 
 	// TODO [knuton] Probably want to discover the name of the serial port
-	serialName := "/dev/ttyAMA0"
+	serialName := "/dev/ttyACM0"
 
 	handle.log.WithField("address", serialName).Info("Attempting to connect with serial port.")
 
@@ -103,7 +103,7 @@ const (
 func connectSerial(ctx context.Context, baseLogger *logrus.Entry, serialName string, onReceive func([]byte)) {
 	config := &serial.Config{
 		Name: serialName,
-		Baud: 115200,
+		Baud: 460800,
 		ReadTimeout: 100 * time.Millisecond,
 		Size: 8,
 		Parity: serial.ParityNone,
