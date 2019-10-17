@@ -185,9 +185,10 @@ func connectSerial(ctx context.Context, logger *logrus.Entry, serialName string,
 		}
 
 		input, err := reader.ReadByte()
-		// TODO Handle other errors
-		if err != nil && err == io.EOF {
+		if err == io.EOF {
 			break
+		} else if err != nil {
+			continue
 		}
 
 		switch {
