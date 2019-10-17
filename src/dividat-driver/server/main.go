@@ -62,7 +62,6 @@ func Start(logger *logrus.Logger) context.CancelFunc {
 	// Setup SensingTex reader
 	texoHandle := texo.New(ctx, baseLog.WithField("package", "texo"))
 	http.Handle("/texo", texoHandle)
-	texoHandle.Connect()
 
 	// Setup RFID scanner
 	rfidHandle := rfid.NewHandle(ctx, baseLog.WithField("package", "rfid"))
