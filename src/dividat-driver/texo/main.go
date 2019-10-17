@@ -4,8 +4,8 @@ import (
 	"context"
 	"sync"
 
-	"fmt"
 	"bufio"
+	"fmt"
 	"io"
 	"time"
 
@@ -48,7 +48,7 @@ func New(ctx context.Context, log *logrus.Entry) *Handle {
 	return &handle
 }
 
-// Connect to device via serial at given name
+// Connect to device
 func (handle *Handle) Connect() {
 
 	// Only allow one connection change at a time
@@ -102,78 +102,87 @@ const (
 
 func connectSerial(ctx context.Context, baseLogger *logrus.Entry, serialName string, onReceive func([]byte)) {
 	config := &serial.Config{
-		Name: serialName,
-		Baud: 460800,
+		Name:        serialName,
+		Baud:        460800,
 		ReadTimeout: 100 * time.Millisecond,
-		Size: 8,
-		Parity: serial.ParityNone,
-		StopBits: serial.Stop1,
+		Size:        8,
+		Parity:      serial.ParityNone,
+		StopBits:    serial.Stop1,
 	}
 
-	serialHandle, err := serial.OpenPort(config)
-        if err != nil {
-                baseLogger.WithField("config", config).WithField("error", err).Info("Failed to open connection to serial port.")
-		return
-		// TODO [knuton] Retry periodically
-        }
+	for {
+		// TODO Check whether we have been killed before re-entering loop
 
-	_, err = serialHandle.Write([]byte{'S', '\n'})
-	if err != nil {
-                baseLogger.WithField("error", err).Info("Failed to write start message to serial port.")
-		return
-	}
-
-        reader := bufio.NewReader(serialHandle)
-	state := WaitingForFirstHeader
-	bytesLeftInRow := 0
-
-        var buff []byte
-        for {
-                input, err := reader.ReadByte()
-                // TODO Handle other errors
-                if err != nil && err == io.EOF {
-                        break
-                }
-
-		switch {
-		case state == WaitingForFirstHeader && input == 0x48:
-			state = HeaderStarted
-		case state == ReachedRowEnd && input == 0x48:
-			state = HeaderStarted
-			fmt.Println()
-			fmt.Printf("%x\n", buff)
-			onReceive(buff)
-                        buff = []byte{}
-		case state == UnexpectedByte && input == 0x48:
-			// Recover from error state when a new header is seen
-			buff = []byte{}
-			bytesLeftInRow = 0
-			state = HeaderStarted
-		case state == HeaderStarted && input == 0x00:
-			state = ExpectingHeaderEnd
-		case state == ExpectingHeaderEnd && input == 0x0A:
-			state = ReachedRowEnd
-		case state == ReadingRowData && bytesLeftInRow > 0:
-			bytesLeftInRow = bytesLeftInRow - 1
-			buff = append(buff, input)
-		case state == ReadingRowData && bytesLeftInRow == 0 && input == 0x0A:
-			state = ReachedRowEnd
-			buff = append(buff, input)
-		case state == ReachedRowEnd && input == 0x4D:
-			state = RowStarted
-			buff = append(buff, input)
-		case state == RowStarted:
-			state = WaitingForRowIndex
-			// 2 bytes per sample
-			bytesLeftInRow = int(input) * 2
-			buff = append(buff, input)
-		case state == WaitingForRowIndex:
-			state = ReadingRowData
-			buff = append(buff, input)
-		case state == ReadingRowData:
-			buff = append(buff, input)
-		default:
-			state = UnexpectedByte
+		port, err := serial.OpenPort(config)
+		if err != nil {
+			baseLogger.WithField("config", config).WithField("error", err).Info("Failed to open connection to serial port.")
+			time.Sleep(2 * time.Second)
+			continue
 		}
-        }
+
+		_, err = port.Write([]byte{'S', '\n'})
+		if err != nil {
+			baseLogger.WithField("error", err).Info("Failed to write start message to serial port.")
+			port.Close()
+			continue
+		}
+
+		reader := bufio.NewReader(port)
+		state := WaitingForFirstHeader
+		bytesLeftInRow := 0
+
+		var buff []byte
+		for {
+			// TODO Check whether we have been killed before reading next byte
+
+			input, err := reader.ReadByte()
+			// TODO Handle other errors
+			if err != nil && err == io.EOF {
+				break
+			}
+
+			switch {
+			case state == WaitingForFirstHeader && input == 0x48:
+				state = HeaderStarted
+			case state == ReachedRowEnd && input == 0x48:
+				state = HeaderStarted
+				fmt.Println()
+				fmt.Printf("%x\n", buff)
+				onReceive(buff)
+				buff = []byte{}
+			case state == UnexpectedByte && input == 0x48:
+				// Recover from error state when a new header is seen
+				buff = []byte{}
+				bytesLeftInRow = 0
+				state = HeaderStarted
+			case state == HeaderStarted && input == 0x00:
+				state = ExpectingHeaderEnd
+			case state == ExpectingHeaderEnd && input == 0x0A:
+				state = ReachedRowEnd
+			case state == ReadingRowData && bytesLeftInRow > 0:
+				bytesLeftInRow = bytesLeftInRow - 1
+				buff = append(buff, input)
+			case state == ReadingRowData && bytesLeftInRow == 0 && input == 0x0A:
+				state = ReachedRowEnd
+				buff = append(buff, input)
+			case state == ReachedRowEnd && input == 0x4D:
+				state = RowStarted
+				buff = append(buff, input)
+			case state == RowStarted:
+				state = WaitingForRowIndex
+				// 2 bytes per sample
+				bytesLeftInRow = int(input) * 2
+				buff = append(buff, input)
+			case state == WaitingForRowIndex:
+				state = ReadingRowData
+				buff = append(buff, input)
+			case state == ReadingRowData:
+				buff = append(buff, input)
+			default:
+				state = UnexpectedByte
+			}
+		}
+
+		port.Close()
+	}
 }
