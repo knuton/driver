@@ -178,6 +178,8 @@ func connectSerial(ctx context.Context, logger *logrus.Entry, serialName string,
 	pointsLeftInSet := 0
 	bytesLeftInPoint := 0
 
+	lastPoll := time.Now()
+
 	var buff []byte
 	for {
 		// Terminate if we were cancelled
@@ -188,7 +190,17 @@ func connectSerial(ctx context.Context, logger *logrus.Entry, serialName string,
 
 		input, err := reader.ReadByte()
 		if err == io.EOF {
-			break
+			if (time.Now().After(lastPoll.Add(20 * time.Millisecond))) {
+				_, err = port.Write([]byte{'S', '\n'})
+				if err != nil {
+					logger.WithField("error", err).Info("Failed to write poll message to serial port.")
+					port.Close()
+					return
+				}
+				lastPoll = time.Now()
+			}
+
+			continue
 		} else if err != nil {
 			continue
 		}
