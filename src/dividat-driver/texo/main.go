@@ -131,23 +131,6 @@ func scanAndConnectSerial(ctx context.Context, logger *logrus.Entry, onReceive f
 type ReaderState int
 
 const (
-	// Init
-	WaitingForFirstHeader ReaderState = iota
-	WaitingForHeaderNewline
-	// Header
-	HeaderStarted
-	ExpectingPointsMarker
-	ExpectingPointsMarkerNewline
-	// Data row
-	RowStarted
-	WaitingForRowIndex
-	ReadingRowData
-	ReachedRowEnd
-	// Error state
-	UnexpectedByte
-)
-
-const (
 	WAITING_FOR_HEADER ReaderState = iota
 	HEADER_START
 	HEADER_READ_LENGTH_MSB
@@ -261,24 +244,6 @@ func connectSerial(ctx context.Context, logger *logrus.Entry, serialName string,
 			state = UNEXPECTED_BYTE
 		}
 
-		/*
-		switch {
-		case state == WAITING_FOR_HEADER:
-			fmt.Println("WAITING_FOR_HEADER")
-		case state == HEADER_START:
-			fmt.Println("HEADER_START")
-		case state == HEADER_READ_LENGTH_MSB:
-			fmt.Println("HEADER_READ_LENGTH_MSB")
-		case state == WAITING_FOR_BODY:
-			fmt.Println("WAITING_FOR_BODY")
-		case state == BODY_START:
-			fmt.Println("BODY_START")
-		case state == BODY_POINT:
-			fmt.Printf("BODY_POINT %d/%d\n", bytesLeftInPoint, pointsLeftInSet)
-		case state == UNEXPECTED_BYTE:
-			fmt.Println("UNEXPECTED_BYTE")
-		}
-		*/
 	}
 
 }
