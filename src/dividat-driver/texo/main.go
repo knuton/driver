@@ -6,7 +6,6 @@ import (
 
 	"encoding/binary"
 	"bufio"
-	"fmt"
 	"io"
 	"io/ioutil"
 	"path"
@@ -233,9 +232,7 @@ func connectSerial(ctx context.Context, logger *logrus.Entry, serialName string,
 				pointsLeftInSet = pointsLeftInSet - 1
 
 				if pointsLeftInSet <= 0 {
-					// Finish and set set
-					fmt.Println()
-					fmt.Printf("%x\n", buff)
+					// Finish and send set
 					onReceive(buff)
 					buff = []byte{}
 
