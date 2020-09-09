@@ -177,7 +177,7 @@ func connectSerial(ctx context.Context, logger *logrus.Entry, serialName string,
 	pointsLeftInSet := 0
 	bytesLeftInPoint := 0
 
-	samplingPeriod := 20 * time.Millisecond
+	samplingPeriod := 40 * time.Millisecond
 	lastPoll := time.Now()
 	lastSend := time.Now().Add(-samplingPeriod)
 
