@@ -149,7 +149,7 @@ const (
 func connectSerial(ctx context.Context, logger *logrus.Entry, serialName string, onReceive func([]byte)) {
 	config := &serial.Config{
 		Name:        serialName,
-		Baud:        460800,
+		Baud:        921600,
 		ReadTimeout: 100 * time.Millisecond,
 		Size:        8,
 		Parity:      serial.ParityNone,
@@ -177,9 +177,9 @@ func connectSerial(ctx context.Context, logger *logrus.Entry, serialName string,
 	pointsLeftInSet := 0
 	bytesLeftInPoint := 0
 
-	samplingPeriod := 40 * time.Millisecond
-	lastPoll := time.Now()
+	samplingPeriod := 30 * time.Millisecond
 	lastSend := time.Now().Add(-samplingPeriod)
+	bytesSincePoll := 0
 
 	var buff []byte
 	for {
@@ -191,20 +191,16 @@ func connectSerial(ctx context.Context, logger *logrus.Entry, serialName string,
 
 		input, err := reader.ReadByte()
 		if err == io.EOF {
-			if (time.Now().After(lastPoll.Add(samplingPeriod))) {
-				_, err = port.Write([]byte{'S', '\n'})
-				if err != nil {
-					logger.WithField("error", err).Info("Failed to write poll message to serial port.")
-					port.Close()
-					return
-				}
-				lastPoll = time.Now()
-			}
-
 			continue
 		} else if err != nil {
 			continue
 		}
+
+		bytesSincePoll = bytesSincePoll + 1
+
+		//if (bytesSincePoll == 1) {
+			//println(time.Now().Sub(lastPoll) / time.Millisecond)
+		//}
 
 		switch {
 		case state == WAITING_FOR_HEADER && input == HEADER_START_MARKER:
@@ -237,12 +233,21 @@ func connectSerial(ctx context.Context, logger *logrus.Entry, serialName string,
 					// Finish and send set
 					if (time.Now().After(lastSend.Add(samplingPeriod))) {
 						onReceive(buff)
+						//println(time.Now().Sub(lastSend) / time.Millisecond)
 						lastSend = time.Now()
 					}
 					buff = []byte{}
 
-					// Get ready for next set
+					// Get ready for next set and request it
 					state = WAITING_FOR_HEADER
+					_, err = port.Write([]byte{'S', '\n'})
+					if err != nil {
+						logger.WithField("error", err).Info("Failed to write poll message to serial port.")
+						port.Close()
+						return
+					}
+
+					time.Sleep(samplingPeriod)
 				} else {
 					// Start next point
 					bytesLeftInPoint = 4
