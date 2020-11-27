@@ -150,7 +150,6 @@ func connectSerial(ctx context.Context, logger *logrus.Entry, serialName string,
 	config := &serial.Config{
 		Name:        serialName,
 		Baud:        921600,
-		ReadTimeout: 100 * time.Millisecond,
 		Size:        8,
 		Parity:      serial.ParityNone,
 		StopBits:    serial.Stop1,
@@ -187,10 +186,8 @@ func connectSerial(ctx context.Context, logger *logrus.Entry, serialName string,
 
 		input, err := reader.ReadByte()
 		if err == io.EOF {
-			time.Sleep(5 * time.Millisecond)
-			continue
+			break
 		} else if err != nil {
-			time.Sleep(5 * time.Millisecond)
 			continue
 		}
 
