@@ -148,7 +148,7 @@ const (
 const (
 	HEADER_START_MARKER = 'N'
 	BODY_START_MARKER   = 'P'
-	BYTES_PER_SAMPLE    = 4
+	BYTES_PER_SAMPLE    = 3
 )
 
 // Actually attempt to connect to an individual serial port and pipe its signal into the callback, summarizing
@@ -173,6 +173,29 @@ func connectSerial(ctx context.Context, logger *logrus.Entry, serialName string,
 		logger.WithField("name", serialName).Info("Disconnecting from serial port.")
 		port.Close()
 	}()
+
+	_, err = port.Write([]byte{'U', 'L', '\n'})
+	time.Sleep(500 * time.Millisecond)
+	logger.Info("Set 8 bit resolution")
+
+	// Soft threshold
+	_, err = port.Write([]byte{'A', '8', '\n'})
+	time.Sleep(1 * time.Millisecond)
+	logger.Info("Set soft threshold")
+
+	_, err = port.Write([]byte{'Z', 'D', '\n'})
+	time.Sleep(1 * time.Millisecond)
+	logger.Info("Disabled autozero")
+	_, err = port.Write([]byte{'V', 'D', '\n'})
+	time.Sleep(1 * time.Millisecond)
+	logger.Info("Disabled voltage compensation")
+	_, err = port.Write([]byte{'L', 'D', '\n'})
+	time.Sleep(1 * time.Millisecond)
+	logger.Info("Disabled line filter")
+	_, err = port.Write([]byte{'N', 'A', '\n'})
+	time.Sleep(1 * time.Millisecond)
+	logger.Info("Set LPF to 2 frames")
+
 
 	_, err = port.Write(START_MEASUREMENT_CMD)
 	if err != nil {
