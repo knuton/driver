@@ -15,7 +15,12 @@ func main() {
 	interrupt := make(chan os.Signal, 1)
 	signal.Notify(interrupt, os.Interrupt)
 
-	u := url.URL{Scheme: "ws", Host: "localhost:8382", Path: "/senso"}
+	path := "senso"
+	if len(os.Args) > 1 {
+		path = "flex"
+	}
+
+	u := url.URL{Scheme: "ws", Host: "localhost:8382", Path: path}
 
 	c, _, err := websocket.DefaultDialer.Dial(u.String(), nil)
 	if err != nil {
