@@ -17,8 +17,8 @@ require (
 	// Both projects are dormant at the moment, but we might want to re-evaluate this
 	// dependency choice as these projects evolve in the future.
 	github.com/libp2p/zeroconf/v2 v2.2.0
-
 	github.com/pin/tftp v2.1.0+incompatible
 	github.com/sirupsen/logrus v1.8.1
 	go.bug.st/serial v1.6.1
+	golang.org/x/crypto v0.22.0 // indirect
 )

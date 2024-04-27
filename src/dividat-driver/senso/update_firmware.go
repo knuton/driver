@@ -6,6 +6,11 @@ import (
 	"encoding/base64"
 	"fmt"
 	"io"
+	"io/ioutil"
+	"os"
+
+	"golang.org/x/crypto/openpgp"
+
 
 	"github.com/dividat/driver/src/dividat-driver/firmware"
 )
@@ -26,9 +31,29 @@ func (handle *Handle) ProcessFirmwareUpdateRequest(command UpdateFirmware, send 
 		handle.cancelCurrentConnection()
 	}
 
-	image, err := decodeImage(command.Image)
+	binary, err := decodeImage(command.Image)
 	if err != nil {
 		msg := fmt.Sprintf("Error decoding base64 string: %v", err)
+		send.failure(msg)
+		handle.log.Error(msg)
+		return
+	}
+
+	keyRingReader, err := os.Open("pubkey.asc.txt")
+        if err != nil {
+                fmt.Println(err)
+                return
+        }
+	keyring, err := openpgp.ReadArmoredKeyRing(keyRingReader)
+        if err != nil {
+                fmt.Println("Read Armored Key Ring: " + err.Error())
+                return
+        }
+	fmt.Println(keyring)
+
+	image, err := unpackImage(binary, keyring)
+	if err != nil {
+		msg := fmt.Sprintf("Error checking image signature: %v", err)
 		send.failure(msg)
 		handle.log.Error(msg)
 		return
@@ -51,4 +76,21 @@ func decodeImage(base64Str string) (io.Reader, error) {
 		return nil, err
 	}
 	return bytes.NewReader(data), nil
+}
+
+func unpackImage(imageReader io.Reader, keyRing openpgp.EntityList) (io.Reader, error) {
+	msg, err := openpgp.ReadMessage(imageReader, keyRing, nil, nil)
+	if err != nil {
+		return nil, fmt.Errorf("Could not read message: %v", err)
+	}
+	
+	// The body must be read until EOF in order for signature flags to be valid
+	_, err = ioutil.ReadAll(msg.UnverifiedBody)
+
+	knownSignatories := keyRing.KeysById(msg.SignedByKeyId)
+	if msg.SignatureError != nil || len(knownSignatories) == 0 {
+		return nil, fmt.Errorf("No valid signature found")
+	}
+
+	return msg.UnverifiedBody, nil
 }
